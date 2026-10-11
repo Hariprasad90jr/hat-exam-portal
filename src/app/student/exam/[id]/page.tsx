@@ -14,10 +14,10 @@ import {
   Send, 
   Loader2, 
   Check, 
-  HelpCircle,
   AlertCircle
 } from "lucide-react";
 import { formatSecondsToTime } from "@/lib/utils";
+import { BrandLogo, BrandWatermark, YadaSutraIcon } from "@/components/BrandLogo";
 
 interface Option {
   id: string;
@@ -99,27 +99,27 @@ export default function ExamEnginePage({
       setQuestions(data.exam.questions || []);
       setSecondsLeft(data.remainingSeconds || data.exam.durationMinutes * 60);
 
-      // Restore existing answers if resuming
-      const initialAnswers: Record<string, AnswerState> = {};
-      if (Array.isArray(data.existingAnswers)) {
+      // Populate existing answer snapshot if resumed
+      if (data.existingAnswers && Array.isArray(data.existingAnswers)) {
+        const restored: Record<string, AnswerState> = {};
         for (const ans of data.existingAnswers) {
-          initialAnswers[ans.questionId] = {
+          restored[ans.questionId] = {
             selectedOptionIds: ans.selectedOptionIds || [],
             textAnswer: ans.textAnswer || "",
-            isMarkedForReview: false,
           };
         }
+        setAnswers(restored);
       }
-      setAnswers(initialAnswers);
+
       setHasStarted(true);
     } catch (err: unknown) {
-      setInitError(err instanceof Error ? err.message : "Error initiating exam");
+      setInitError(err instanceof Error ? err.message : "Initialization failed");
     } finally {
       setInitLoading(false);
     }
   };
 
-  // Timer countdown
+  // Timer tick
   useEffect(() => {
     if (!hasStarted || secondsLeft <= 0) return;
 
@@ -127,7 +127,7 @@ export default function ExamEnginePage({
       setSecondsLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          handleFinalSubmit(true); // Auto-submit on expiration
+          handleFinalSubmit(true);
           return 0;
         }
         return prev - 1;
@@ -137,63 +137,52 @@ export default function ExamEnginePage({
     return () => clearInterval(timer);
   }, [hasStarted, secondsLeft]);
 
-  // Anti-Cheat & Tab Switch Proctoring Detection
-  const handleProctorViolation = useCallback(
-    async (eventType: "TAB_SWITCH" | "FULLSCREEN_EXIT") => {
-      if (!attemptId || !hasStarted || submitting) return;
+  // Anti-cheating & proctoring listeners
+  const reportProctorViolation = useCallback(async (type: string, details?: string) => {
+    if (!hasStarted || !examData?.proctoringStrict) return;
 
-      try {
-        const res = await fetch(`/api/student/exams/${examId}/proctor-event`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ attemptId, eventType }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setTabSwitchWarnings(data.tabSwitchCount || tabSwitchWarnings + 1);
-          setProctorWarningMsg(
-            `Proctor Alert: Tab switch / Window blur detected! (Incident #${data.tabSwitchCount || 1}). This action has been logged into your test audit record.`
-          );
-          setShowProctorWarning(true);
-        }
-      } catch (err) {
-        console.error("Proctor event error:", err);
-      }
-    },
-    [attemptId, hasStarted, submitting, examId, tabSwitchWarnings]
-  );
+    try {
+      await fetch(`/api/student/exams/${examId}/proctor-event`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          attemptId,
+          type,
+          details,
+        }),
+      });
+    } catch (err) {
+      console.error("Proctor event failed to send:", err);
+    }
+  }, [hasStarted, examData, examId, attemptId]);
 
   useEffect(() => {
     if (!hasStarted || !examData?.proctoringStrict) return;
 
-    const onVisibilityChange = () => {
+    const handleVisibilityChange = () => {
       if (document.hidden) {
-        handleProctorViolation("TAB_SWITCH");
+        setTabSwitchWarnings((prev) => prev + 1);
+        setProctorWarningMsg("Warning: Window focus lost or tab switched. This incident has been logged in the assessment security journal.");
+        setShowProctorWarning(true);
+        reportProctorViolation("TAB_SWITCH", "User navigated away from active examination tab.");
       }
     };
 
-    const onBlur = () => {
-      handleProctorViolation("TAB_SWITCH");
+    const handleBlur = () => {
+      reportProctorViolation("WINDOW_BLUR", "Browser window lost focus.");
     };
 
-    const onContextMenu = (e: MouseEvent) => {
-      e.preventDefault();
-    };
-
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    window.addEventListener("blur", onBlur);
-    document.addEventListener("contextmenu", onContextMenu);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleBlur);
 
     return () => {
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-      window.removeEventListener("blur", onBlur);
-      document.removeEventListener("contextmenu", onContextMenu);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleBlur);
     };
-  }, [hasStarted, examData?.proctoringStrict, handleProctorViolation]);
+  }, [hasStarted, examData, reportProctorViolation]);
 
-  // Background auto-save answer
-  const autoSaveAnswer = async (questionId: string, state: AnswerState) => {
-    if (!attemptId) return;
+  // Save single answer
+  const autoSaveAnswer = async (questionId: string, answerState: AnswerState) => {
     try {
       await fetch(`/api/student/exams/${examId}/save-answer`, {
         method: "POST",
@@ -201,48 +190,47 @@ export default function ExamEnginePage({
         body: JSON.stringify({
           attemptId,
           questionId,
-          selectedOptionIds: state.selectedOptionIds,
-          textAnswer: state.textAnswer,
+          selectedOptionIds: answerState.selectedOptionIds,
+          textAnswer: answerState.textAnswer,
         }),
       });
     } catch (err) {
-      console.error("Auto-save failed:", err);
+      console.error("Autosave error:", err);
     }
   };
 
   // Option selection handlers
   const handleSelectSingleOption = (questionId: string, optionId: string) => {
-    const current = answers[questionId] || { selectedOptionIds: [] };
-    const updated: AnswerState = {
-      ...current,
+    const nextState: AnswerState = {
+      ...answers[questionId],
       selectedOptionIds: [optionId],
     };
-    setAnswers((prev) => ({ ...prev, [questionId]: updated }));
-    autoSaveAnswer(questionId, updated);
+    setAnswers((prev) => ({ ...prev, [questionId]: nextState }));
+    autoSaveAnswer(questionId, nextState);
   };
 
   const handleToggleMultipleOption = (questionId: string, optionId: string) => {
-    const current = answers[questionId] || { selectedOptionIds: [] };
-    const exists = current.selectedOptionIds.includes(optionId);
-    const updatedIds = exists
-      ? current.selectedOptionIds.filter((id) => id !== optionId)
-      : [...current.selectedOptionIds, optionId];
+    const current = answers[questionId]?.selectedOptionIds || [];
+    const nextOptions = current.includes(optionId)
+      ? current.filter((id) => id !== optionId)
+      : [...current, optionId];
 
-    const updated: AnswerState = {
-      ...current,
-      selectedOptionIds: updatedIds,
+    const nextState: AnswerState = {
+      ...answers[questionId],
+      selectedOptionIds: nextOptions,
     };
-    setAnswers((prev) => ({ ...prev, [questionId]: updated }));
-    autoSaveAnswer(questionId, updated);
+    setAnswers((prev) => ({ ...prev, [questionId]: nextState }));
+    autoSaveAnswer(questionId, nextState);
   };
 
-  const handleTextAnswerChange = (questionId: string, text: string) => {
-    const current = answers[questionId] || { selectedOptionIds: [] };
-    const updated: AnswerState = {
-      ...current,
-      textAnswer: text,
-    };
-    setAnswers((prev) => ({ ...prev, [questionId]: updated }));
+  const handleTextAnswerChange = (questionId: string, val: string) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: {
+        ...prev[questionId],
+        textAnswer: val,
+      },
+    }));
   };
 
   const handleTextAnswerBlur = (questionId: string) => {
@@ -304,39 +292,41 @@ export default function ExamEnginePage({
   // PRE-EXAM INSTRUCTIONS SCREEN
   if (!hasStarted) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4">
-        <div className="max-w-xl w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6">
+      <div className="min-h-screen bg-[#F7F5EF] text-[#24332F] flex items-center justify-center p-4 relative selection:bg-[#E8F3F1] selection:text-[#176B63]">
+        <BrandWatermark opacity="opacity-[0.04]" />
+
+        <div className="max-w-xl w-full bg-white border border-[#E4E0D6] rounded-3xl p-8 shadow-xl space-y-6 relative z-10">
           <div className="text-center space-y-2">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center shadow-lg">
-              <ShieldAlert className="w-7 h-7" />
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-[#E8F3F1] text-[#176B63] flex items-center justify-center shadow-sm">
+              <ShieldAlert className="w-7 h-7 text-[#B59A68]" />
             </div>
-            <h1 className="text-2xl font-bold text-white">Proctored Examination Gate</h1>
-            <p className="text-xs text-slate-400">Review guidelines before launching the secure exam room</p>
+            <h1 className="font-serif text-2xl font-bold text-[#24332F]">Proctored Examination Gate</h1>
+            <p className="text-xs text-[#66736E] font-sans">Review assessment parameters before entering the formal exam environment</p>
           </div>
 
           {initError && (
-            <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
               <span>{initError}</span>
             </div>
           )}
 
-          <div className="space-y-3 bg-slate-950/70 border border-slate-800/80 rounded-2xl p-5 text-xs text-slate-300">
-            <h3 className="font-semibold text-white uppercase tracking-wider text-[11px] mb-2">
-              Assessment Instructions & Policies:
+          <div className="space-y-3 bg-[#FAF7F0] border border-[#E4E0D6] rounded-2xl p-5 text-xs text-[#24332F]">
+            <h3 className="font-semibold text-[#176B63] uppercase tracking-wider text-[11px] mb-2">
+              Examination Guidelines & Academic Integrity:
             </h3>
-            <ul className="space-y-2 list-disc list-inside text-slate-400">
+            <ul className="space-y-2 list-disc list-inside text-[#66736E]">
               <li>
-                <strong className="text-slate-200">Strict Anti-Cheating:</strong> Switching tabs, minimizing the browser, or losing window focus is continuously logged and reported.
+                <strong className="text-[#24332F]">Server-Authoritative Timer:</strong> The countdown clock runs continuously. Upon expiry, the assessment will auto-submit.
               </li>
               <li>
-                <strong className="text-slate-200">Live Timer:</strong> When the countdown reaches 0:00, your exam will automatically submit.
+                <strong className="text-[#24332F]">Integrity Logging:</strong> Window unfocus, tab switching, and minimizing are logged into the audit journal.
               </li>
               <li>
-                <strong className="text-slate-200">Auto-Saving:</strong> Every option you click is immediately saved in the background.
+                <strong className="text-[#24332F]">Continuous Auto-Save:</strong> Responses are cryptographically synchronized as each choice is selected.
               </li>
               <li>
-                <strong className="text-slate-200">Question Palette:</strong> You can jump between questions and mark questions for review anytime.
+                <strong className="text-[#24332F]">Question Navigation:</strong> Use the question palette to jump between classical questions or flag them for review.
               </li>
             </ul>
           </div>
@@ -344,17 +334,17 @@ export default function ExamEnginePage({
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push("/student/dashboard")}
-              className="w-1/3 py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-xl text-xs transition text-center cursor-pointer"
+              className="w-1/3 py-3 px-4 bg-white hover:bg-[#FAF7F0] border border-[#E4E0D6] text-[#24332F] font-semibold rounded-xl text-xs transition text-center cursor-pointer shadow-sm"
             >
               Back to Dashboard
             </button>
             <button
               onClick={handleStartExam}
               disabled={initLoading}
-              className="w-2/3 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/30 cursor-pointer"
+              className="w-2/3 py-3 px-4 bg-[#176B63] hover:bg-[#12554E] disabled:opacity-50 text-white font-semibold rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-sm cursor-pointer"
             >
-              {initLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Maximize2 className="w-4 h-4" />}
-              <span>I Understand, Begin Assessment</span>
+              {initLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Maximize2 className="w-4 h-4 text-[#B59A68]" />}
+              <span>Enter Examination Room</span>
             </button>
           </div>
         </div>
@@ -376,27 +366,29 @@ export default function ExamEnginePage({
   const timerCritical = secondsLeft < 60; // < 1 min
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col select-none">
+    <div className="min-h-screen bg-[#F7F5EF] text-[#24332F] flex flex-col select-none relative selection:bg-[#E8F3F1] selection:text-[#176B63]">
+      <BrandWatermark opacity="opacity-[0.02]" />
+
       {/* Top Exam Navigation Bar */}
-      <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur-md px-6 h-16 flex items-center justify-between sticky top-0 z-40">
+      <header className="border-b border-[#E4E0D6] bg-white/95 backdrop-blur-md px-6 h-18 flex items-center justify-between sticky top-0 z-40 shadow-xs">
         <div className="flex items-center gap-4">
           <div className="min-w-0">
-            <span className="font-mono text-[10px] text-indigo-400 font-bold uppercase">{examData?.code}</span>
-            <h1 className="text-sm font-bold text-white truncate max-w-xs sm:max-w-md">{examData?.title}</h1>
+            <span className="font-mono text-[10px] text-[#8C7448] font-bold uppercase">{examData?.code}</span>
+            <h1 className="font-serif text-base font-bold text-[#24332F] truncate max-w-xs sm:max-w-md">{examData?.title}</h1>
           </div>
         </div>
 
         {/* Live Timer */}
         <div
-          className={`flex items-center gap-2 px-4 py-1.5 rounded-full border font-mono text-sm font-bold transition ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-full border font-mono text-sm font-bold transition shadow-xs ${
             timerCritical
-              ? "bg-rose-500/20 text-rose-400 border-rose-500/40 animate-pulse"
+              ? "bg-rose-50 text-rose-700 border-rose-300 animate-pulse"
               : timerWarning
-              ? "bg-amber-500/20 text-amber-400 border-amber-500/40"
-              : "bg-indigo-950/80 text-indigo-300 border-indigo-800"
+              ? "bg-[#FAF7F0] text-[#8C7448] border-[#B59A68]"
+              : "bg-[#E8F3F1] text-[#176B63] border-[#2E857A]/30"
           }`}
         >
-          <Clock className="w-4 h-4" />
+          <Clock className="w-4 h-4 text-[#B59A68]" />
           <span>{formatSecondsToTime(secondsLeft)}</span>
         </div>
 
@@ -404,7 +396,7 @@ export default function ExamEnginePage({
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowSubmitModal(true)}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-lg shadow-emerald-600/25 cursor-pointer"
+            className="px-4 py-2 bg-[#176B63] hover:bg-[#12554E] text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
           >
             <Send className="w-3.5 h-3.5" />
             <span>Finish & Submit</span>
@@ -413,28 +405,28 @@ export default function ExamEnginePage({
       </header>
 
       {/* Main Workspace */}
-      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 relative z-10">
         {/* Left Column: Current Question Card */}
         <div className="lg:col-span-3 flex flex-col justify-between space-y-6">
-          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+          <div className="bg-white border border-[#E4E0D6] rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
             {/* Question Progress and Type badge */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div className="flex items-center justify-between border-b border-[#E4E0D6] pb-4">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-white uppercase tracking-wider">
+                <span className="text-xs font-bold text-[#24332F] uppercase tracking-wider">
                   Question {currentIdx + 1} of {questions.length}
                 </span>
-                <span className="text-slate-600">•</span>
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-medium">
+                <span className="text-[#8A9690]">•</span>
+                <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-[#FAF7F0] text-[#8C7448] font-semibold border border-[#B59A68]/30">
                   {currentQuestion?.type.replace("_", " ")}
                 </span>
               </div>
 
               <div className="flex items-center gap-3">
-                <span className="text-xs font-mono text-indigo-400 font-bold">
+                <span className="text-xs font-mono text-[#176B63] font-bold">
                   +{currentQuestion?.points} pt{currentQuestion?.points > 1 ? "s" : ""}
                 </span>
                 {examData?.negativeMarking && currentQuestion?.negativePoints > 0 && (
-                  <span className="text-xs font-mono text-rose-400 font-medium">
+                  <span className="text-xs font-mono text-rose-700 font-medium">
                     (-{currentQuestion.negativePoints})
                   </span>
                 )}
@@ -443,8 +435,8 @@ export default function ExamEnginePage({
                   onClick={() => handleToggleReview(currentQuestion.id)}
                   className={`p-1.5 rounded-lg border transition cursor-pointer ${
                     currentAnswer?.isMarkedForReview
-                      ? "bg-purple-600/30 text-purple-300 border-purple-500"
-                      : "bg-slate-800 text-slate-400 border-slate-700 hover:text-white"
+                      ? "bg-[#FAF7F0] text-[#8C7448] border-[#B59A68]"
+                      : "bg-white text-[#8A9690] border-[#E4E0D6] hover:text-[#24332F]"
                   }`}
                   title="Mark for review"
                 >
@@ -454,7 +446,7 @@ export default function ExamEnginePage({
             </div>
 
             {/* Prompt text */}
-            <div className="text-white text-base font-medium leading-relaxed">
+            <div className="font-serif text-[#24332F] text-lg sm:text-xl font-bold leading-relaxed">
               {currentQuestion?.prompt}
             </div>
 
@@ -475,60 +467,60 @@ export default function ExamEnginePage({
                       }
                       className={`p-4 rounded-2xl border transition flex items-center gap-3.5 cursor-pointer ${
                         isSelected
-                          ? "bg-indigo-600/20 border-indigo-500/80 text-white shadow-md shadow-indigo-600/10"
-                          : "bg-slate-950/60 border-slate-800 text-slate-300 hover:bg-slate-800/40 hover:border-slate-700"
+                          ? "bg-[#E8F3F1] border-2 border-[#176B63] text-[#176B63] shadow-xs font-semibold"
+                          : "bg-white border-[#E4E0D6] text-[#24332F] hover:bg-[#FAF7F0]/60 hover:border-[#B59A68]/60"
                       }`}
                     >
                       <div
                         className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border transition ${
                           isSelected
-                            ? "bg-indigo-600 border-indigo-500 text-white"
-                            : "border-slate-700 text-transparent"
+                            ? "bg-[#176B63] border-[#176B63] text-white"
+                            : "border-[#E4E0D6] text-transparent"
                         }`}
                       >
                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                       </div>
-                      <span className="text-sm font-medium">{opt.text}</span>
+                      <span className="text-sm font-sans">{opt.text}</span>
                     </div>
                   );
                 })}
               </div>
             ) : (
               <div className="pt-2">
-                <label className="block text-xs font-semibold text-slate-400 mb-2">
-                  Your Answer:
+                <label className="block text-xs font-semibold text-[#66736E] mb-2 uppercase tracking-wider">
+                  Your Answer / Clinical Formulation:
                 </label>
                 <textarea
                   rows={6}
                   value={currentAnswer?.textAnswer || ""}
                   onChange={(e) => handleTextAnswerChange(currentQuestion.id, e.target.value)}
                   onBlur={() => handleTextAnswerBlur(currentQuestion.id)}
-                  placeholder="Type your complete solution or response here..."
-                  className="w-full p-4 bg-slate-950/80 border border-slate-800 rounded-2xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Type your complete solution or classical Ayurvedic response here..."
+                  className="w-full p-4 bg-white border border-[#E4E0D6] rounded-2xl text-[#24332F] text-sm focus:outline-none focus:ring-2 focus:ring-[#176B63]/20 focus:border-[#176B63]"
                 />
               </div>
             )}
           </div>
 
           {/* Bottom Bar: Prev / Next */}
-          <div className="flex items-center justify-between bg-slate-900/60 border border-slate-800 p-4 rounded-2xl">
+          <div className="flex items-center justify-between bg-white border border-[#E4E0D6] p-4 rounded-2xl shadow-xs">
             <button
               onClick={() => setCurrentIdx((prev) => Math.max(0, prev - 1))}
               disabled={currentIdx === 0}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2 bg-white hover:bg-[#FAF7F0] border border-[#E4E0D6] disabled:opacity-30 text-[#24332F] text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Previous</span>
             </button>
 
-            <span className="text-xs text-slate-400 font-medium">
-              Answered <strong className="text-white">{answeredCount}</strong> of {questions.length}
+            <span className="text-xs text-[#66736E] font-medium">
+              Answered <strong className="text-[#176B63]">{answeredCount}</strong> of {questions.length}
             </span>
 
             {isLastQuestion ? (
               <button
                 onClick={() => setShowSubmitModal(true)}
-                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 cursor-pointer"
+                className="px-5 py-2 bg-[#176B63] hover:bg-[#12554E] text-white text-xs font-semibold rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
               >
                 <span>Submit Exam</span>
                 <Send className="w-3.5 h-3.5" />
@@ -536,7 +528,7 @@ export default function ExamEnginePage({
             ) : (
               <button
                 onClick={() => setCurrentIdx((prev) => Math.min(questions.length - 1, prev + 1))}
-                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 cursor-pointer"
+                className="px-5 py-2 bg-[#176B63] hover:bg-[#12554E] text-white text-xs font-semibold rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
               >
                 <span>Next Question</span>
                 <ChevronRight className="w-4 h-4" />
@@ -546,10 +538,10 @@ export default function ExamEnginePage({
         </div>
 
         {/* Right Column: Question Palette */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 space-y-5 h-fit">
+        <div className="bg-white border border-[#E4E0D6] rounded-3xl p-5 space-y-5 h-fit shadow-sm">
           <div>
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">Question Palette</h2>
-            <p className="text-[11px] text-slate-500 mt-0.5">Click any number to navigate</p>
+            <h2 className="font-serif text-sm font-bold text-[#24332F]">Question Palette</h2>
+            <p className="text-[11px] text-[#66736E] mt-0.5">Click any number to navigate</p>
           </div>
 
           {/* Palette Grid */}
@@ -560,13 +552,13 @@ export default function ExamEnginePage({
               const isMarked = ans?.isMarkedForReview;
               const isCurrent = idx === currentIdx;
 
-              let style = "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700";
+              let style = "bg-white border-[#E4E0D6] text-[#66736E] hover:border-[#176B63]";
               if (isCurrent) {
-                style = "bg-indigo-600 text-white border-indigo-400 font-bold ring-2 ring-indigo-500/50";
+                style = "bg-[#176B63] text-white border-[#176B63] font-bold shadow-xs";
               } else if (isMarked) {
-                style = "bg-purple-600/30 text-purple-300 border-purple-500/80 font-bold";
+                style = "bg-[#FAF7F0] text-[#8C7448] border-[#B59A68] font-bold";
               } else if (isAnswered) {
-                style = "bg-emerald-600/30 text-emerald-300 border-emerald-500/80 font-bold";
+                style = "bg-[#E8F3F1] text-[#176B63] border-[#2E857A]/40 font-bold";
               }
 
               return (
@@ -582,21 +574,21 @@ export default function ExamEnginePage({
           </div>
 
           {/* Palette Legend */}
-          <div className="pt-4 border-t border-slate-800 space-y-2 text-[11px] text-slate-400">
+          <div className="pt-4 border-t border-[#E4E0D6] space-y-2 text-[11px] text-[#66736E]">
             <div className="flex items-center gap-2">
-              <div className="w-3.5 h-3.5 rounded bg-emerald-600/30 border border-emerald-500" />
+              <div className="w-3.5 h-3.5 rounded bg-[#E8F3F1] border border-[#2E857A]/40" />
               <span>Answered ({answeredCount})</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3.5 h-3.5 rounded bg-purple-600/30 border border-purple-500" />
+              <div className="w-3.5 h-3.5 rounded bg-[#FAF7F0] border border-[#B59A68]" />
               <span>Marked for Review</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3.5 h-3.5 rounded bg-slate-950 border border-slate-800" />
+              <div className="w-3.5 h-3.5 rounded bg-white border border-[#E4E0D6]" />
               <span>Unanswered ({questions.length - answeredCount})</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3.5 h-3.5 rounded bg-indigo-600 border border-indigo-400" />
+              <div className="w-3.5 h-3.5 rounded bg-[#176B63] border border-[#176B63]" />
               <span>Current Question</span>
             </div>
           </div>
@@ -605,26 +597,26 @@ export default function ExamEnginePage({
 
       {/* Proctoring Warning Modal */}
       {showProctorWarning && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border-2 border-rose-500/60 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3 text-rose-400">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-rose-300 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-rose-700">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center">
                 <AlertTriangle className="w-6 h-6" />
               </div>
-              <h2 className="text-base font-bold text-white">Security Violation Warning</h2>
+              <h2 className="font-serif text-lg font-bold text-[#24332F]">Examination Integrity Warning</h2>
             </div>
 
-            <p className="text-xs text-rose-300 leading-relaxed bg-rose-500/10 p-3.5 rounded-xl border border-rose-500/20">
+            <p className="text-xs text-rose-800 leading-relaxed bg-rose-50 p-3.5 rounded-xl border border-rose-200">
               {proctorWarningMsg}
             </p>
 
-            <p className="text-[11px] text-slate-400">
-              Please keep this examination window active in fullscreen at all times. Repeated violations may result in immediate test termination.
+            <p className="text-[11px] text-[#66736E]">
+              Please keep this examination window active at all times. Repeated incidents are recorded and presented to instructors during certification review.
             </p>
 
             <button
               onClick={() => setShowProctorWarning(false)}
-              className="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl transition cursor-pointer"
+              className="w-full py-2.5 bg-[#176B63] hover:bg-[#12554E] text-white text-xs font-semibold rounded-xl transition cursor-pointer shadow-sm"
             >
               I Understand, Return to Test
             </button>
@@ -634,40 +626,40 @@ export default function ExamEnginePage({
 
       {/* Submit Confirmation Modal */}
       {showSubmitModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-5">
-            <h2 className="text-lg font-bold text-white">Submit Examination?</h2>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white border border-[#E4E0D6] rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-5">
+            <h2 className="font-serif text-xl font-bold text-[#24332F]">Submit Examination?</h2>
 
-            <div className="p-4 bg-slate-950/60 border border-slate-800 rounded-2xl space-y-2 text-xs text-slate-300">
+            <div className="p-4 bg-[#FAF7F0] border border-[#E4E0D6] rounded-2xl space-y-2 text-xs text-[#24332F]">
               <div className="flex justify-between">
                 <span>Total Questions:</span>
-                <strong className="text-white font-mono">{questions.length}</strong>
+                <strong className="font-mono">{questions.length}</strong>
               </div>
               <div className="flex justify-between">
                 <span>Questions Answered:</span>
-                <strong className="text-emerald-400 font-mono">{answeredCount}</strong>
+                <strong className="text-[#176B63] font-mono">{answeredCount}</strong>
               </div>
               <div className="flex justify-between">
                 <span>Unanswered:</span>
-                <strong className="text-amber-400 font-mono">{questions.length - answeredCount}</strong>
+                <strong className="text-[#8C7448] font-mono">{questions.length - answeredCount}</strong>
               </div>
             </div>
 
-            <p className="text-xs text-slate-400">
-              Once submitted, your answers will be automatically graded and you will immediately receive your final evaluation score.
+            <p className="text-xs text-[#66736E]">
+              Once submitted, your answers will be graded and you will immediately receive your final evaluation breakdown.
             </p>
 
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowSubmitModal(false)}
-                className="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition cursor-pointer"
+                className="w-1/2 py-2.5 bg-white hover:bg-[#FAF7F0] border border-[#E4E0D6] text-[#24332F] rounded-xl text-xs font-semibold transition cursor-pointer shadow-xs"
               >
                 Keep Reviewing
               </button>
               <button
                 onClick={() => handleFinalSubmit(false)}
                 disabled={submitting}
-                className="w-1/2 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/30 cursor-pointer"
+                className="w-1/2 py-2.5 bg-[#176B63] hover:bg-[#12554E] disabled:opacity-50 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
               >
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                 <span>Confirm & Submit</span>

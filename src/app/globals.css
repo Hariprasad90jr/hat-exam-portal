@@ -1,26 +1,89 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #F7F5EF;
+  --foreground: #24332F;
+
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --font-sans: var(--font-sans), "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* YadaSutra Brand Colors */
+  --brand-teal: #176B63;
+  --brand-teal-hover: #12554E;
+  --brand-teal-secondary: #2E857A;
+  --brand-teal-dark: #0E3834;
+  --brand-teal-light: #E8F3F1;
+  --brand-teal-subtle: #F0F7F6;
+
+  --brand-gold: #B59A68;
+  --brand-gold-hover: #9E8454;
+  --brand-gold-deep: #8C7448;
+  --brand-gold-light: #F6F1E5;
+  --brand-gold-tint: #FAF7F0;
+
+  --brand-ivory: #F7F5EF;
+  --brand-surface: #FFFFFF;
+
+  --brand-text: #24332F;
+  --brand-text-muted: #66736E;
+  --brand-text-subtle: #8D9994;
+
+  --brand-border: #E4E0D6;
+  --brand-border-light: #EFECE5;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@theme {
+  --color-brand-teal: #176B63;
+  --color-brand-teal-hover: #12554E;
+  --color-brand-teal-secondary: #2E857A;
+  --color-brand-teal-dark: #0E3834;
+  --color-brand-teal-light: #E8F3F1;
+  --color-brand-teal-subtle: #F0F7F6;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-brand-gold: #B59A68;
+  --color-brand-gold-hover: #9E8454;
+  --color-brand-gold-deep: #8C7448;
+  --color-brand-gold-light: #F6F1E5;
+  --color-brand-gold-tint: #FAF7F0;
+
+  --color-brand-ivory: #F7F5EF;
+  --color-brand-surface: #FFFFFF;
+
+  --color-brand-text: #24332F;
+  --color-brand-muted: #66736E;
+  --color-brand-subtle: #8D9994;
+
+  --color-brand-border: #E4E0D6;
+  --color-brand-border-light: #EFECE5;
+
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --font-sans: var(--font-sans), "Plus Jakarta Sans", system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--brand-ivory);
+  color: var(--brand-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Print optimizations for certificates */
+@media print {
+  body {
+    background: transparent !important;
+    color: #000 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-certificate {
+    box-shadow: none !important;
+    border-color: #B59A68 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    page-break-inside: avoid;
+  }
 }

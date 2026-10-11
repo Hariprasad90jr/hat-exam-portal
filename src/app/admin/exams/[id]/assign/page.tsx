@@ -8,14 +8,10 @@ import {
   ArrowLeft, 
   CheckSquare, 
   Square, 
-  Clock, 
-  Calendar, 
   Trash2, 
   CheckCircle2, 
-  Users, 
   AlertCircle, 
   Loader2,
-  Filter
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -104,21 +100,31 @@ export default function AssignExamPage({
     return (s.department || "General") === departmentFilter;
   });
 
+  const assignedStudentIdSet = new Set(assignments.map((a) => a.student.id));
+
   const handleToggleStudent = (id: string) => {
-    if (selectedStudentIds.includes(id)) {
-      setSelectedStudentIds(selectedStudentIds.filter((sid) => sid !== id));
-    } else {
-      setSelectedStudentIds([...selectedStudentIds, id]);
-    }
+    setSelectedStudentIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
   };
 
   const handleSelectAllFiltered = () => {
-    const ids = filteredStudents.map((s) => s.id);
-    const allSelected = ids.every((id) => selectedStudentIds.includes(id));
-    if (allSelected) {
-      setSelectedStudentIds(selectedStudentIds.filter((id) => !ids.includes(id)));
+    const unassignedFilteredIds = filteredStudents
+      .map((s) => s.id)
+      .filter((id) => !assignedStudentIdSet.has(id));
+
+    const allCurrentlySelected = unassignedFilteredIds.every((id) =>
+      selectedStudentIds.includes(id)
+    );
+
+    if (allCurrentlySelected) {
+      setSelectedStudentIds((prev) =>
+        prev.filter((id) => !unassignedFilteredIds.includes(id))
+      );
     } else {
-      setSelectedStudentIds(Array.from(new Set([...selectedStudentIds, ...ids])));
+      setSelectedStudentIds((prev) => [
+        ...new Set([...prev, ...unassignedFilteredIds]),
+      ]);
     }
   };
 
@@ -139,19 +145,19 @@ export default function AssignExamPage({
         body: JSON.stringify({
           studentIds: selectedStudentIds,
           maxAttempts: Number(maxAttempts),
-          validFrom: validFrom || null,
-          validTo: validTo || null,
+          validFrom: validFrom ? new Date(validFrom).toISOString() : null,
+          validTo: validTo ? new Date(validTo).toISOString() : null,
         }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to assign exam");
+      if (!res.ok) throw new Error(data.error || "Failed to assign students");
 
-      setSuccessMsg(`Successfully assigned exam to ${selectedStudentIds.length} candidate(s)!`);
+      setSuccessMsg(`Successfully assigned ${data.count || selectedStudentIds.length} candidate(s).`);
       setSelectedStudentIds([]);
       fetchData();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to assign exam");
+      setError(err instanceof Error ? err.message : "Assignment failed");
     } finally {
       setAssigning(false);
     }
@@ -161,10 +167,11 @@ export default function AssignExamPage({
     if (!confirm(`Revoke assignment for ${studentName}?`)) return;
 
     try {
-      const res = await fetch(
-        `/api/admin/exams/${examId}/assignments?assignmentId=${assignmentId}`,
-        { method: "DELETE" }
-      );
+      const res = await fetch(`/api/admin/exams/${examId}/assignments`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assignmentId }),
+      });
       if (res.ok) {
         setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
       }
@@ -173,70 +180,68 @@ export default function AssignExamPage({
     }
   };
 
-  if (loading) {
+  if (loading && !exam) {
     return (
-      <div className="p-16 text-center text-slate-400">
-        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-400" />
-        Loading assignment controls...
+      <div className="p-16 text-center text-[#66736E]">
+        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#176B63]" />
+        Loading assignment details...
       </div>
     );
   }
 
-  const assignedStudentIdSet = new Set(assignments.map((a) => a.student.id));
-
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16">
-      {/* Back button & Title */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-[#E4E0D6] pb-5">
         <div className="flex items-center gap-3">
           <Link
             href="/admin/exams"
-            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition"
+            className="p-2 bg-white hover:bg-[#FAF7F0] border border-[#E4E0D6] rounded-xl text-[#66736E] hover:text-[#24332F] transition shadow-sm"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-xs px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800">
+              <span className="font-mono text-xs px-2 py-0.5 rounded bg-[#FAF7F0] text-[#8C7448] border border-[#B59A68]/30 font-semibold">
                 {exam?.code}
               </span>
-              <h1 className="text-xl font-bold text-white">{exam?.title}</h1>
+              <h1 className="font-serif text-2xl font-bold text-[#24332F]">{exam?.title}</h1>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">Assign this assessment to candidates or cohorts</p>
+            <p className="text-xs text-[#66736E] mt-0.5 font-sans">Assign this curriculum assessment to scholars or cohorts</p>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0" />
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
           <span>{error}</span>
         </div>
       )}
 
       {successMsg && (
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 text-xs flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
           <span>{successMsg}</span>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Student Selection & Filter */}
-        <div className="lg:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <div className="lg:col-span-2 bg-white border border-[#E4E0D6] rounded-2xl p-5 space-y-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E4E0D6] pb-3">
             <div>
-              <h2 className="text-sm font-semibold text-white">Select Eligible Students</h2>
-              <p className="text-[11px] text-slate-400">Pick candidates to enroll for this exam</p>
+              <h2 className="font-serif text-base font-bold text-[#24332F]">Select Eligible Scholars</h2>
+              <p className="text-[11px] text-[#66736E]">Pick enrolled candidates for this examination</p>
             </div>
 
             <div className="flex items-center gap-2">
               <select
                 value={departmentFilter}
                 onChange={(e) => setDepartmentFilter(e.target.value)}
-                className="bg-slate-950 border border-slate-800 text-xs text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none"
+                className="bg-white border border-[#E4E0D6] text-xs text-[#24332F] rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#176B63]"
               >
-                <option value="ALL">All Departments</option>
+                <option value="ALL">All Disciplines</option>
                 {departments.map((d) => (
                   <option key={d} value={d}>
                     {d}
@@ -247,17 +252,17 @@ export default function AssignExamPage({
               <button
                 type="button"
                 onClick={handleSelectAllFiltered}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded-lg border border-slate-700 transition font-medium cursor-pointer"
+                className="px-3 py-1.5 bg-white hover:bg-[#FAF7F0] text-[#24332F] text-xs rounded-lg border border-[#E4E0D6] transition font-semibold cursor-pointer shadow-sm"
               >
                 Toggle All
               </button>
             </div>
           </div>
 
-          <div className="max-h-96 overflow-y-auto divide-y divide-slate-800/60 pr-1">
+          <div className="max-h-96 overflow-y-auto divide-y divide-[#E4E0D6]/60 pr-1">
             {filteredStudents.length === 0 ? (
-              <div className="py-8 text-center text-slate-500 text-xs">
-                No students enrolled in this category.
+              <div className="py-8 text-center text-[#66736E] text-xs">
+                No scholars enrolled in this discipline.
               </div>
             ) : (
               filteredStudents.map((student) => {
@@ -270,34 +275,34 @@ export default function AssignExamPage({
                     onClick={() => handleToggleStudent(student.id)}
                     className={`py-2.5 px-3 rounded-xl transition flex items-center justify-between cursor-pointer ${
                       isSelected
-                        ? "bg-indigo-950/40 border border-indigo-600/40"
-                        : "hover:bg-slate-800/40"
+                        ? "bg-[#E8F3F1] border border-[#2E857A]/30"
+                        : "hover:bg-[#FAF7F0]/60"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="text-indigo-400">
+                      <div className="text-[#176B63]">
                         {isSelected ? (
-                          <CheckSquare className="w-4 h-4 text-indigo-400" />
+                          <CheckSquare className="w-4 h-4 text-[#176B63]" />
                         ) : (
-                          <Square className="w-4 h-4 text-slate-600" />
+                          <Square className="w-4 h-4 text-[#8A9690]" />
                         )}
                       </div>
                       <div>
-                        <div className="text-xs font-semibold text-white flex items-center gap-2">
+                        <div className="text-xs font-semibold text-[#24332F] flex items-center gap-2">
                           <span>{student.name}</span>
                           {isAlreadyAssigned && (
-                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-normal">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FAF7F0] text-[#8C7448] font-medium border border-[#B59A68]/30">
                               Assigned
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-slate-400">
-                          {student.email} • {student.studentId || "No Roll"}
+                        <div className="text-[11px] text-[#66736E]">
+                          {student.email} • {student.studentId || "No Roll ID"}
                         </div>
                       </div>
                     </div>
 
-                    <span className="text-[11px] text-slate-400 font-mono">
+                    <span className="text-[11px] text-[#8C7448] font-medium">
                       {student.department || "General"}
                     </span>
                   </div>
@@ -308,14 +313,14 @@ export default function AssignExamPage({
         </div>
 
         {/* Right Column: Assignment Rules & Schedule */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-4 flex flex-col justify-between">
+        <div className="bg-white border border-[#E4E0D6] rounded-2xl p-5 space-y-4 flex flex-col justify-between shadow-sm">
           <div className="space-y-4">
-            <h2 className="text-sm font-semibold text-white border-b border-slate-800 pb-2">
+            <h2 className="font-serif text-base font-bold text-[#24332F] border-b border-[#E4E0D6] pb-2">
               Assignment Rules
             </h2>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-[#24332F] mb-1 uppercase tracking-wider">
                 Max Allowed Attempts
               </label>
               <input
@@ -324,96 +329,96 @@ export default function AssignExamPage({
                 max={10}
                 value={maxAttempts}
                 onChange={(e) => setMaxAttempts(parseInt(e.target.value) || 1)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono"
+                className="w-full px-3 py-2 bg-white border border-[#E4E0D6] rounded-xl text-xs text-[#24332F] focus:outline-none focus:ring-1 focus:ring-[#176B63] font-mono font-bold"
               />
-              <span className="text-[11px] text-slate-400 mt-1 block">
-                Number of test attempts permitted per student
+              <span className="text-[11px] text-[#66736E] mt-1 block">
+                Number of test attempts permitted per candidate
               </span>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-[#24332F] mb-1 uppercase tracking-wider">
                 Valid From (Optional)
               </label>
               <input
                 type="datetime-local"
                 value={validFrom}
                 onChange={(e) => setValidFrom(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full px-3 py-2 bg-white border border-[#E4E0D6] rounded-xl text-xs text-[#24332F] focus:outline-none focus:ring-1 focus:ring-[#176B63]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-[#24332F] mb-1 uppercase tracking-wider">
                 Deadline / Valid Until (Optional)
               </label>
               <input
                 type="datetime-local"
                 value={validTo}
                 onChange={(e) => setValidTo(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full px-3 py-2 bg-white border border-[#E4E0D6] rounded-xl text-xs text-[#24332F] focus:outline-none focus:ring-1 focus:ring-[#176B63]"
               />
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-800 space-y-2">
-            <div className="text-xs text-slate-400">
-              Selected: <strong className="text-indigo-400 font-mono">{selectedStudentIds.length}</strong> student(s)
+          <div className="pt-4 border-t border-[#E4E0D6] space-y-2">
+            <div className="text-xs text-[#66736E]">
+              Selected: <strong className="text-[#176B63] font-bold">{selectedStudentIds.length}</strong> scholar(s)
             </div>
 
             <button
               type="button"
               onClick={handleAssign}
               disabled={assigning || selectedStudentIds.length === 0}
-              className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-medium rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-600/30 cursor-pointer"
+              className="w-full py-2.5 px-4 bg-[#176B63] hover:bg-[#12554E] disabled:opacity-50 text-white font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
             >
-              {assigning ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-              <span>Confirm & Assign</span>
+              {assigning ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4 text-[#B59A68]" />}
+              <span>Confirm & Enroll</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Currently Assigned Students Table */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-3">
-        <h2 className="text-sm font-semibold text-white">
+      <div className="bg-white border border-[#E4E0D6] rounded-2xl p-5 space-y-3 shadow-sm">
+        <h2 className="font-serif text-base font-bold text-[#24332F]">
           Enrolled Candidates ({assignments.length})
         </h2>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-950/60 text-slate-400 border-b border-slate-800">
+            <thead className="bg-[#FAF7F0] text-[#66736E] border-b border-[#E4E0D6]">
               <tr>
-                <th className="px-4 py-3 font-semibold">Candidate</th>
-                <th className="px-4 py-3 font-semibold">Student ID</th>
+                <th className="px-4 py-3 font-semibold">Scholar</th>
+                <th className="px-4 py-3 font-semibold">Roll ID</th>
                 <th className="px-4 py-3 font-semibold text-center">Attempts Used</th>
                 <th className="px-4 py-3 font-semibold text-center">Latest Result</th>
                 <th className="px-4 py-3 font-semibold">Enrolled On</th>
                 <th className="px-4 py-3 font-semibold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
+            <tbody className="divide-y divide-[#E4E0D6]/60 text-[#24332F]">
               {assignments.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
-                    No candidates assigned to this exam yet.
+                  <td colSpan={6} className="px-4 py-8 text-center text-[#66736E]">
+                    No candidates assigned to this examination yet.
                   </td>
                 </tr>
               ) : (
                 assignments.map((a) => {
                   const latestAttempt = a.attempts[0];
                   return (
-                    <tr key={a.id} className="hover:bg-slate-800/40">
-                      <td className="px-4 py-3 font-medium text-white">
+                    <tr key={a.id} className="hover:bg-[#FAF7F0]/40">
+                      <td className="px-4 py-3 font-medium text-[#24332F]">
                         {a.student.name}
-                        <span className="block text-[11px] text-slate-400 font-normal">
+                        <span className="block text-[11px] text-[#66736E] font-normal">
                           {a.student.email}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-mono text-slate-300">
+                      <td className="px-4 py-3 font-mono text-[#8C7448]">
                         {a.student.studentId || "—"}
                       </td>
-                      <td className="px-4 py-3 text-center font-mono">
+                      <td className="px-4 py-3 text-center font-mono font-medium">
                         {a.attempts.length} / {a.maxAttempts}
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -421,23 +426,23 @@ export default function AssignExamPage({
                           <span
                             className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                               latestAttempt.passed
-                                ? "bg-emerald-500/10 text-emerald-400"
-                                : "bg-rose-500/10 text-rose-400"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : "bg-rose-50 text-rose-700 border border-rose-200"
                             }`}
                           >
                             {latestAttempt.passed ? "Passed" : "Failed"} ({latestAttempt.score} pts)
                           </span>
                         ) : (
-                          <span className="text-slate-500 text-[11px]">Not attempted</span>
+                          <span className="text-[#8A9690] text-[11px]">Not attempted</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-slate-400 text-[11px]">
+                      <td className="px-4 py-3 text-[#66736E] text-[11px]">
                         {formatDate(a.assignedAt)}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <button
                           onClick={() => handleRevoke(a.id, a.student.name)}
-                          className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition cursor-pointer"
+                          className="p-1.5 text-[#8A9690] hover:text-rose-700 rounded-lg hover:bg-rose-50 transition cursor-pointer"
                           title="Revoke enrollment"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

@@ -8,7 +8,6 @@ import {
   Award, 
   PlusCircle, 
   UserPlus, 
-  ArrowUpRight, 
   CheckCircle2, 
   XCircle, 
   Clock,
@@ -86,25 +85,27 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E4E0D6] pb-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Admin Dashboard</h1>
-          <p className="text-xs text-slate-400 mt-1">Platform overview, candidate assessments, and test statistics</p>
+          <h1 className="font-serif text-3xl font-bold tracking-tight text-[#24332F]">Curriculum & Assessment Console</h1>
+          <p className="text-xs text-[#66736E] mt-1 font-sans">
+            Institutional overview, student cohorts, examinations, and certification telemetry
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <Link
             href="/admin/students"
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 transition flex items-center gap-1.5"
+            className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#F9F6EE] border border-[#E4E0D6] text-xs font-semibold text-[#24332F] transition flex items-center gap-1.5 shadow-sm"
           >
-            <UserPlus className="w-4 h-4 text-indigo-400" />
-            <span>Manage Students</span>
+            <UserPlus className="w-4 h-4 text-[#176B63]" />
+            <span>Manage Scholars</span>
           </Link>
           <Link
             href="/admin/exams/create"
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/25"
+            className="px-4 py-2 rounded-xl bg-[#176B63] hover:bg-[#12554E] text-xs font-semibold text-white transition flex items-center gap-1.5 shadow-sm"
           >
-            <PlusCircle className="w-4 h-4" />
-            <span>Create New Exam</span>
+            <PlusCircle className="w-4 h-4 text-[#B59A68]" />
+            <span>Author Examination</span>
           </Link>
         </div>
       </div>
@@ -113,23 +114,23 @@ export default async function AdminDashboardPage() {
       {(pendingReviewsCount > 0 || pendingRequestsCount > 0) && (
         <div className="space-y-3">
           {pendingReviewsCount > 0 && (
-            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-4">
+            <div className="p-4 rounded-xl bg-[#FFFBEB] border border-[#FDE68A] flex items-center justify-between gap-4 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-[#FDE68A] text-[#92400E] flex items-center justify-center shrink-0">
                   <FileCheck2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-semibold text-amber-300">
+                  <h3 className="text-xs font-bold text-[#92400E]">
                     Subjective Evaluation Pending Review
                   </h3>
-                  <p className="text-[11px] text-slate-300">
+                  <p className="text-[11px] text-[#78350F]">
                     {pendingReviewsCount} exam attempt{pendingReviewsCount > 1 ? "s require" : " requires"} instructor evaluation of short-answer questions before final scoring & certificates can be issued.
                   </p>
                 </div>
               </div>
               <Link
                 href="/admin/attempts"
-                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shrink-0 transition"
+                className="px-3 py-1.5 bg-[#92400E] hover:bg-[#78350F] text-white font-bold text-xs rounded-lg shrink-0 transition"
               >
                 Grade Attempts
               </Link>
@@ -137,23 +138,23 @@ export default async function AdminDashboardPage() {
           )}
 
           {pendingRequestsCount > 0 && (
-            <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-between gap-4">
+            <div className="p-4 rounded-xl bg-[#E8F3F1] border border-[#2E857A]/30 flex items-center justify-between gap-4 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
-                  <Clock className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-xl bg-[#176B63] text-white flex items-center justify-center shrink-0">
+                  <Clock className="w-5 h-5 text-[#B59A68]" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-semibold text-indigo-300">
+                  <h3 className="text-xs font-bold text-[#176B63]">
                     Additional Attempt Requests Pending
                   </h3>
-                  <p className="text-[11px] text-slate-300">
-                    {pendingRequestsCount} student{pendingRequestsCount > 1 ? "s have" : " has"} requested an additional exam attempt after reaching maximum tries.
+                  <p className="text-[11px] text-[#24332F]">
+                    {pendingRequestsCount} scholar{pendingRequestsCount > 1 ? "s have" : " has"} requested an additional exam attempt after reaching maximum tries.
                   </p>
                 </div>
               </div>
               <Link
                 href="/admin/attempt-requests"
-                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl shrink-0 transition"
+                className="px-3 py-1.5 bg-[#176B63] hover:bg-[#12554E] text-white font-semibold text-xs rounded-lg shrink-0 transition"
               >
                 Review Requests
               </Link>
@@ -164,55 +165,55 @@ export default async function AdminDashboardPage() {
 
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-sm relative overflow-hidden">
+        <div className="p-5 rounded-2xl bg-white border border-[#E4E0D6] shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Published Exams</span>
-            <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#66736E]">Published Exams</span>
+            <div className="w-9 h-9 rounded-xl bg-[#E8F3F1] text-[#176B63] flex items-center justify-center">
               <BookOpen className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-3xl font-extrabold text-white">{publishedExamsCount}</span>
-            <span className="text-xs text-slate-400 ml-2">/ {examsCount} total</span>
+            <span className="text-3xl font-extrabold text-[#24332F]">{publishedExamsCount}</span>
+            <span className="text-xs text-[#66736E] ml-2 font-medium">/ {examsCount} total</span>
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-sm relative overflow-hidden">
+        <div className="p-5 rounded-2xl bg-white border border-[#E4E0D6] shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Active Students</span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#66736E]">Active Scholars</span>
+            <div className="w-9 h-9 rounded-xl bg-[#E8F3F1] text-[#176B63] flex items-center justify-center">
               <Users className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-3xl font-extrabold text-white">{studentsCount}</span>
-            <span className="text-xs text-slate-400 ml-2">eligible candidates</span>
+            <span className="text-3xl font-extrabold text-[#24332F]">{studentsCount}</span>
+            <span className="text-xs text-[#66736E] ml-2 font-medium">enrolled</span>
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-sm relative overflow-hidden">
+        <div className="p-5 rounded-2xl bg-white border border-[#E4E0D6] shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Attempts</span>
-            <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#66736E]">Exam Attempts</span>
+            <div className="w-9 h-9 rounded-xl bg-[#FAF7F0] text-[#8C7448] flex items-center justify-center">
               <FileCheck2 className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-3xl font-extrabold text-white">{attemptsCount}</span>
-            <span className="text-xs text-slate-400 ml-2">({pendingReviewsCount} pending review)</span>
+            <span className="text-3xl font-extrabold text-[#24332F]">{attemptsCount}</span>
+            <span className="text-xs text-[#66736E] ml-2 font-medium">({pendingReviewsCount} pending review)</span>
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-sm relative overflow-hidden">
+        <div className="p-5 rounded-2xl bg-white border border-[#E4E0D6] shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Issued Certificates</span>
-            <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#66736E]">Issued Certificates</span>
+            <div className="w-9 h-9 rounded-xl bg-[#FAF7F0] text-[#8C7448] flex items-center justify-center">
               <Award className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-3xl font-extrabold text-white">{certificatesCount}</span>
-            <span className="text-xs text-slate-400 ml-2">({passRate}% pass rate)</span>
+            <span className="text-3xl font-extrabold text-[#24332F]">{certificatesCount}</span>
+            <span className="text-xs text-[#66736E] ml-2 font-medium">({passRate}% pass rate)</span>
           </div>
         </div>
       </div>
@@ -220,15 +221,15 @@ export default async function AdminDashboardPage() {
       {/* Main Content: Recent Exams & Recent Attempts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left: Active Exams */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-5">
+        <div className="bg-white border border-[#E4E0D6] rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-5 pb-4 border-b border-[#E4E0D6]">
             <div>
-              <h2 className="text-base font-semibold text-white">Active Examinations</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Recently created assessments</p>
+              <h2 className="font-serif text-lg font-bold text-[#24332F]">Curriculum Assessments</h2>
+              <p className="text-xs text-[#66736E] mt-0.5">Recently created examination modules</p>
             </div>
             <Link
               href="/admin/exams"
-              className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1"
+              className="text-xs text-[#176B63] hover:text-[#12554E] font-semibold flex items-center gap-1"
             >
               <span>View all</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -237,33 +238,33 @@ export default async function AdminDashboardPage() {
 
           <div className="space-y-3">
             {recentExams.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 text-xs">
-                No exams created yet. Click "Create New Exam" to begin.
+              <div className="text-center py-8 text-[#66736E] text-xs">
+                No examinations created yet. Click "Author Examination" to begin.
               </div>
             ) : (
               recentExams.map((exam) => (
                 <div
                   key={exam.id}
-                  className="p-4 rounded-xl bg-slate-950/50 border border-slate-800/80 hover:border-slate-700 transition flex items-center justify-between"
+                  className="p-4 rounded-xl bg-[#FAF7F0]/40 border border-[#E4E0D6] hover:border-[#B59A68]/60 transition flex items-center justify-between"
                 >
                   <div className="min-w-0 pr-4">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-white text-xs truncate">{exam.title}</span>
+                      <span className="font-serif font-bold text-[#24332F] text-sm truncate">{exam.title}</span>
                       <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
                           exam.status === "PUBLISHED"
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                            : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                            ? "bg-[#E8F3F1] text-[#176B63] border border-[#2E857A]/20"
+                            : "bg-[#FAF7F0] text-[#8C7448] border border-[#B59A68]/30"
                         }`}
                       >
                         {exam.status}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3 mt-1.5 text-[11px] text-slate-400">
-                      <span>{exam.code}</span>
+                    <div className="flex items-center gap-3 mt-1.5 text-[11px] text-[#66736E]">
+                      <span className="font-mono text-[#8C7448] font-medium">{exam.code}</span>
                       <span>•</span>
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-slate-500" />
+                        <Clock className="w-3 h-3 text-[#8A9690]" />
                         {exam.durationMinutes} mins
                       </span>
                       <span>•</span>
@@ -276,13 +277,13 @@ export default async function AdminDashboardPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     <Link
                       href={`/admin/exams/${exam.id}/assign`}
-                      className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] rounded-lg border border-slate-700 transition font-medium"
+                      className="px-2.5 py-1.5 bg-white hover:bg-[#F9F6EE] text-[#24332F] text-[11px] rounded-lg border border-[#E4E0D6] transition font-medium shadow-sm"
                     >
                       Assign
                     </Link>
                     <Link
                       href={`/admin/exams/${exam.id}/edit`}
-                      className="px-2.5 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-[11px] rounded-lg border border-indigo-500/30 transition font-medium"
+                      className="px-2.5 py-1.5 bg-[#E8F3F1] hover:bg-[#D5EAE6] text-[#176B63] text-[11px] rounded-lg border border-[#2E857A]/20 transition font-semibold"
                     >
                       Edit
                     </Link>
@@ -294,15 +295,15 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Right: Recent Attempts */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-5">
+        <div className="bg-white border border-[#E4E0D6] rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-5 pb-4 border-b border-[#E4E0D6]">
             <div>
-              <h2 className="text-base font-semibold text-white">Recent Test Submissions</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Real-time candidate submissions</p>
+              <h2 className="font-serif text-lg font-bold text-[#24332F]">Recent Scholar Submissions</h2>
+              <p className="text-xs text-[#66736E] mt-0.5">Real-time examination submissions</p>
             </div>
             <Link
               href="/admin/attempts"
-              className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1"
+              className="text-xs text-[#176B63] hover:text-[#12554E] font-semibold flex items-center gap-1"
             >
               <span>All results</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -311,37 +312,37 @@ export default async function AdminDashboardPage() {
 
           <div className="space-y-3">
             {recentAttempts.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 text-xs">
+              <div className="text-center py-8 text-[#66736E] text-xs">
                 No exam attempts recorded yet.
               </div>
             ) : (
               recentAttempts.map((attempt) => (
                 <div
                   key={attempt.id}
-                  className="p-3.5 rounded-xl bg-slate-950/50 border border-slate-800/80 flex items-center justify-between"
+                  className="p-3.5 rounded-xl bg-[#FAF7F0]/40 border border-[#E4E0D6] flex items-center justify-between"
                 >
                   <div className="min-w-0 pr-3">
-                    <p className="text-xs font-semibold text-white truncate">{attempt.student?.name || "Student"}</p>
-                    <p className="text-[11px] text-slate-400 truncate mt-0.5">{attempt.exam?.title}</p>
-                    <span className="text-[10px] text-slate-400">{formatDate(attempt.submittedAt || attempt.createdAt)}</span>
+                    <p className="text-xs font-bold text-[#24332F] truncate">{attempt.student?.name || "Scholar"}</p>
+                    <p className="text-[11px] text-[#66736E] truncate mt-0.5">{attempt.exam?.title}</p>
+                    <span className="text-[10px] text-[#8A9690]">{formatDate(attempt.submittedAt || attempt.createdAt)}</span>
                   </div>
 
                   <div className="text-right shrink-0 flex items-center gap-3">
                     <div>
-                      <div className="text-xs font-bold text-white">
+                      <div className="text-xs font-bold text-[#24332F]">
                         {attempt.score}/{attempt.totalMarks}
                       </div>
-                      <div className="text-[11px] text-slate-400">
+                      <div className="text-[11px] text-[#66736E] font-medium">
                         {Math.round(attempt.percentage)}%
                       </div>
                     </div>
                     {attempt.passed ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold">
                         <CheckCircle2 className="w-3 h-3" />
                         Pass
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-semibold">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-semibold">
                         <XCircle className="w-3 h-3" />
                         Fail
                       </span>

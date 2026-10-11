@@ -7,16 +7,13 @@ import {
   Trash2, 
   ArrowUp, 
   ArrowDown, 
-  CheckCircle2, 
-  HelpCircle, 
   Save, 
   AlertCircle, 
   Loader2, 
   Check, 
   X,
   Settings,
-  ListOrdered,
-  Sparkles
+  ListOrdered
 } from "lucide-react";
 
 export type QuestionType = "MCQ_SINGLE" | "MCQ_MULTIPLE" | "TRUE_FALSE" | "SHORT_ANSWER";
@@ -82,15 +79,15 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
           {
             order: 1,
             type: "MCQ_SINGLE",
-            prompt: "What is the primary benefit of React Server Components?",
+            prompt: "Which of the following is considered the primary seat (Sthana) of Pitta Dosha according to Ashtanga Hridaya?",
             points: 2,
             negativePoints: 0.5,
-            explanation: "RSC reduces client bundle size by executing on the server.",
+            explanation: "According to Ashtanga Hridaya Sutrasthana, the primary seat of Pitta dosha is Nabhi and Amashaya (specifically Grahani/Pachaka sthana).",
             options: [
-              { text: "Zero client bundle size for server dependencies", isCorrect: true },
-              { text: "Automatic database indexing", isCorrect: false },
-              { text: "Replaces client state management entirely", isCorrect: false },
-              { text: "Increases browser memory usage", isCorrect: false },
+              { text: "Amashaya (Lower stomach / small intestine)", isCorrect: true },
+              { text: "Hridaya (Heart)", isCorrect: false },
+              { text: "Pakwashaya (Colon)", isCorrect: false },
+              { text: "Shiras (Head)", isCorrect: false },
             ],
           },
         ]
@@ -260,19 +257,21 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-16">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E4E0D6] pb-5">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
-            {initialData?.id ? `Edit Examination: ${title || code}` : "Create Examination"}
+          <h1 className="font-serif text-3xl font-bold tracking-tight text-[#24332F]">
+            {initialData?.id ? `Edit Examination: ${title || code}` : "Author Examination"}
           </h1>
-          <p className="text-xs text-slate-400 mt-1">Configure questions, marking criteria, and anti-cheating policies</p>
+          <p className="text-xs text-[#66736E] mt-1 font-sans">
+            Configure curriculum questions, marking criteria, and examination parameters
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => router.push("/admin/exams")}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 rounded-xl transition cursor-pointer"
+            className="px-4 py-2 bg-white hover:bg-[#FAF7F0] border border-[#E4E0D6] text-xs font-semibold text-[#24332F] rounded-xl transition cursor-pointer shadow-sm"
           >
             Cancel
           </button>
@@ -280,30 +279,30 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-xs font-semibold text-white rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 cursor-pointer"
+            className="px-5 py-2 bg-[#176B63] hover:bg-[#12554E] disabled:opacity-50 text-xs font-semibold text-white rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
           >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            <span>{initialData?.id ? "Update Exam" : "Save & Publish"}</span>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-[#B59A68]" />}
+            <span>{initialData?.id ? "Update Examination" : "Save & Publish"}</span>
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-start gap-3 text-rose-300 text-xs">
-          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-3 text-rose-800 text-xs">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Mode Tabs & Summary Banner */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-900/80 border border-slate-800 p-2.5 rounded-2xl">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white border border-[#E4E0D6] p-2.5 rounded-2xl shadow-sm">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveTab("questions")}
             className={`px-4 py-2 rounded-xl text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === "questions"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/25"
-                : "text-slate-400 hover:text-white"
+                ? "bg-[#176B63] text-white shadow-sm font-semibold"
+                : "text-[#66736E] hover:text-[#24332F]"
             }`}
           >
             <ListOrdered className="w-4 h-4" />
@@ -313,24 +312,24 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
             onClick={() => setActiveTab("settings")}
             className={`px-4 py-2 rounded-xl text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === "settings"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/25"
-                : "text-slate-400 hover:text-white"
+                ? "bg-[#176B63] text-white shadow-sm font-semibold"
+                : "text-[#66736E] hover:text-[#24332F]"
             }`}
           >
             <Settings className="w-4 h-4" />
-            <span>Exam Settings</span>
+            <span>Parameters & Policy</span>
           </button>
         </div>
 
         <div className="flex items-center gap-4 text-xs pr-2">
-          <div className="text-slate-400">
-            Total Points: <strong className="text-white font-mono">{totalMarks}</strong>
+          <div className="text-[#66736E]">
+            Total Points: <strong className="text-[#24332F] font-mono">{totalMarks}</strong>
           </div>
-          <div className="text-slate-400">
-            Pass Mark: <strong className="text-emerald-400 font-mono">{passingScore}%</strong>
+          <div className="text-[#66736E]">
+            Pass Mark: <strong className="text-[#176B63] font-mono">{passingScore}%</strong>
           </div>
-          <div className="text-slate-400">
-            Duration: <strong className="text-indigo-400 font-mono">{durationMinutes}m</strong>
+          <div className="text-[#66736E]">
+            Duration: <strong className="text-[#8C7448] font-mono">{durationMinutes}m</strong>
           </div>
         </div>
       </div>
@@ -341,18 +340,18 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
           {questions.map((q, qIdx) => (
             <div
               key={qIdx}
-              className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-sm space-y-4 relative"
+              className="bg-white border border-[#E4E0D6] rounded-2xl p-5 shadow-sm space-y-4 relative"
             >
               {/* Question Header */}
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center justify-between border-b border-[#E4E0D6] pb-3">
                 <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold text-xs">
+                  <span className="w-7 h-7 rounded-lg bg-[#E8F3F1] text-[#176B63] border border-[#2E857A]/20 flex items-center justify-center font-bold text-xs">
                     {q.order}
                   </span>
                   <select
                     value={q.type}
                     onChange={(e) => handleQuestionChange(qIdx, "type", e.target.value as QuestionType)}
-                    className="bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="bg-white border border-[#E4E0D6] text-[#24332F] text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#176B63]"
                   >
                     <option value="MCQ_SINGLE">Single Choice (Radio)</option>
                     <option value="MCQ_MULTIPLE">Multiple Choice (Checkboxes)</option>
@@ -362,20 +361,20 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold">Points:</span>
+                  <div className="flex items-center gap-1.5 bg-[#FAF7F0] px-2.5 py-1 rounded-lg border border-[#E4E0D6]">
+                    <span className="text-[10px] text-[#66736E] uppercase font-semibold">Points:</span>
                     <input
                       type="number"
                       min={0.5}
                       step={0.5}
                       value={q.points}
                       onChange={(e) => handleQuestionChange(qIdx, "points", parseFloat(e.target.value) || 1)}
-                      className="w-12 bg-transparent text-white text-xs font-mono focus:outline-none"
+                      className="w-12 bg-transparent text-[#24332F] text-xs font-mono font-bold focus:outline-none"
                     />
                   </div>
 
                   {negativeMarking && (
-                    <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800 text-rose-300">
+                    <div className="flex items-center gap-1.5 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 text-rose-800">
                       <span className="text-[10px] uppercase font-semibold">Negative:</span>
                       <input
                         type="number"
@@ -383,7 +382,7 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
                         step={0.25}
                         value={q.negativePoints}
                         onChange={(e) => handleQuestionChange(qIdx, "negativePoints", parseFloat(e.target.value) || 0)}
-                        className="w-12 bg-transparent text-rose-400 text-xs font-mono focus:outline-none"
+                        className="w-12 bg-transparent text-rose-700 text-xs font-mono font-bold focus:outline-none"
                       />
                     </div>
                   )}
@@ -392,7 +391,7 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
                     type="button"
                     onClick={() => handleMoveQuestion(qIdx, "up")}
                     disabled={qIdx === 0}
-                    className="p-1.5 text-slate-400 hover:text-white disabled:opacity-30 rounded-lg hover:bg-slate-800"
+                    className="p-1.5 text-[#66736E] hover:text-[#24332F] disabled:opacity-30 rounded-lg hover:bg-[#FAF7F0]"
                     title="Move up"
                   >
                     <ArrowUp className="w-3.5 h-3.5" />
@@ -401,7 +400,7 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
                     type="button"
                     onClick={() => handleMoveQuestion(qIdx, "down")}
                     disabled={qIdx === questions.length - 1}
-                    className="p-1.5 text-slate-400 hover:text-white disabled:opacity-30 rounded-lg hover:bg-slate-800"
+                    className="p-1.5 text-[#66736E] hover:text-[#24332F] disabled:opacity-30 rounded-lg hover:bg-[#FAF7F0]"
                     title="Move down"
                   >
                     <ArrowDown className="w-3.5 h-3.5" />
@@ -409,7 +408,7 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
                   <button
                     type="button"
                     onClick={() => handleRemoveQuestion(qIdx)}
-                    className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-rose-500/10"
+                    className="p-1.5 text-[#8A9690] hover:text-rose-700 rounded-lg hover:bg-rose-50"
                     title="Delete Question"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -419,15 +418,15 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
 
               {/* Prompt Textarea */}
               <div>
-                <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                <label className="block text-[11px] font-semibold text-[#24332F] mb-1 uppercase tracking-wider">
                   Question Prompt / Problem Description
                 </label>
                 <textarea
                   rows={2}
                   value={q.prompt}
                   onChange={(e) => handleQuestionChange(qIdx, "prompt", e.target.value)}
-                  placeholder="Enter the question text here..."
-                  className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="Enter the Ayurvedic question text here..."
+                  className="w-full p-2.5 bg-white border border-[#E4E0D6] rounded-xl text-xs text-[#24332F] placeholder-[#8A9690] focus:outline-none focus:ring-1 focus:ring-[#176B63] focus:border-[#176B63]"
                 />
               </div>
 
@@ -435,14 +434,14 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
               {q.type !== "SHORT_ANSWER" && (
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                    <span className="text-[11px] font-semibold text-[#66736E] uppercase tracking-wider">
                       Options (Click checkmark to toggle correct answers)
                     </span>
                     {q.type !== "TRUE_FALSE" && (
                       <button
                         type="button"
                         onClick={() => handleAddOption(qIdx)}
-                        className="text-[11px] text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1 cursor-pointer"
+                        className="text-[11px] text-[#176B63] hover:text-[#12554E] font-semibold flex items-center gap-1 cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
                         <span>Add Option</span>
@@ -458,8 +457,8 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
                           onClick={() => handleToggleCorrectOption(qIdx, optIdx)}
                           className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border transition cursor-pointer ${
                             opt.isCorrect
-                              ? "bg-emerald-600 text-white border-emerald-500 shadow-sm shadow-emerald-600/30"
-                              : "bg-slate-950 text-slate-500 border-slate-800 hover:border-slate-700"
+                              ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                              : "bg-white text-[#8A9690] border-[#E4E0D6] hover:border-[#176B63]"
                           }`}
                           title={opt.isCorrect ? "Correct answer" : "Mark as correct"}
                         >
@@ -471,14 +470,14 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
                           value={opt.text}
                           onChange={(e) => handleOptionChange(qIdx, optIdx, e.target.value)}
                           placeholder={`Option ${optIdx + 1}`}
-                          className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          className="flex-1 px-3 py-2 bg-white border border-[#E4E0D6] rounded-xl text-xs text-[#24332F] placeholder-[#8A9690] focus:outline-none focus:ring-1 focus:ring-[#176B63] focus:border-[#176B63]"
                         />
 
                         {q.type !== "TRUE_FALSE" && (
                           <button
                             type="button"
                             onClick={() => handleRemoveOption(qIdx, optIdx)}
-                            className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg"
+                            className="p-1.5 text-[#8A9690] hover:text-rose-700 rounded-lg"
                             title="Remove Option"
                           >
                             <X className="w-3.5 h-3.5" />
@@ -492,15 +491,15 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
 
               {/* Explanation notes */}
               <div>
-                <label className="block text-[11px] font-medium text-slate-400 mb-1">
-                  Explanation / Solution Notes (Revealed during student review)
+                <label className="block text-[11px] font-semibold text-[#66736E] mb-1">
+                  Explanation / Classical Reference Notes (Revealed during student review)
                 </label>
                 <input
                   type="text"
                   value={q.explanation}
                   onChange={(e) => handleQuestionChange(qIdx, "explanation", e.target.value)}
-                  placeholder="e.g. This is correct because..."
-                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="e.g. As per Charaka Samhita Chikitsa Sthana..."
+                  className="w-full px-3 py-1.5 bg-white border border-[#E4E0D6] rounded-xl text-xs text-[#24332F] placeholder-[#8A9690] focus:outline-none focus:ring-1 focus:ring-[#176B63] focus:border-[#176B63]"
                 />
               </div>
             </div>
@@ -511,33 +510,33 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
             <button
               type="button"
               onClick={() => handleAddQuestion("MCQ_SINGLE")}
-              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-white transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+              className="px-4 py-2.5 bg-white hover:bg-[#FAF7F0] border border-[#E4E0D6] rounded-xl text-xs font-semibold text-[#24332F] transition flex items-center gap-1.5 shadow-sm cursor-pointer"
             >
-              <Plus className="w-4 h-4 text-indigo-400" />
+              <Plus className="w-4 h-4 text-[#176B63]" />
               <span>+ Add Single Choice MCQ</span>
             </button>
             <button
               type="button"
               onClick={() => handleAddQuestion("MCQ_MULTIPLE")}
-              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-white transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+              className="px-4 py-2.5 bg-white hover:bg-[#FAF7F0] border border-[#E4E0D6] rounded-xl text-xs font-semibold text-[#24332F] transition flex items-center gap-1.5 shadow-sm cursor-pointer"
             >
-              <Plus className="w-4 h-4 text-purple-400" />
+              <Plus className="w-4 h-4 text-[#8C7448]" />
               <span>+ Add Multi-Select MCQ</span>
             </button>
             <button
               type="button"
               onClick={() => handleAddQuestion("TRUE_FALSE")}
-              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-white transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+              className="px-4 py-2.5 bg-white hover:bg-[#FAF7F0] border border-[#E4E0D6] rounded-xl text-xs font-semibold text-[#24332F] transition flex items-center gap-1.5 shadow-sm cursor-pointer"
             >
-              <Plus className="w-4 h-4 text-emerald-400" />
+              <Plus className="w-4 h-4 text-[#176B63]" />
               <span>+ Add True / False</span>
             </button>
             <button
               type="button"
               onClick={() => handleAddQuestion("SHORT_ANSWER")}
-              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-white transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+              className="px-4 py-2.5 bg-white hover:bg-[#FAF7F0] border border-[#E4E0D6] rounded-xl text-xs font-semibold text-[#24332F] transition flex items-center gap-1.5 shadow-sm cursor-pointer"
             >
-              <Plus className="w-4 h-4 text-amber-400" />
+              <Plus className="w-4 h-4 text-[#B59A68]" />
               <span>+ Add Short Answer</span>
             </button>
           </div>
@@ -546,88 +545,102 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
 
       {/* TAB 2: Exam Settings */}
       {activeTab === "settings" && (
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-6">
+        <div className="bg-white border border-[#E4E0D6] rounded-2xl p-6 space-y-6 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">Exam Title</label>
+              <label className="block text-xs font-semibold text-[#24332F] mb-1.5 uppercase tracking-wider">
+                Exam Title
+              </label>
               <input
                 type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Distributed Systems & Microservices Exam"
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="e.g. Fundamental Principles of Ayurveda (Padartha Vijnana)"
+                className="w-full px-3 py-2 bg-white border border-[#E4E0D6] rounded-xl text-xs text-[#24332F] placeholder-[#8A9690] focus:outline-none focus:ring-1 focus:ring-[#176B63] focus:border-[#176B63]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">Unique Exam Code / Slug</label>
+              <label className="block text-xs font-semibold text-[#24332F] mb-1.5 uppercase tracking-wider">
+                Unique Exam Code / Syllabus ID
+              </label>
               <input
                 type="text"
                 required
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
-                placeholder="e.g. CS-401-FINAL"
-                className="w-full px-3 py-2 font-mono bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="e.g. AYUR-PV-101"
+                className="w-full px-3 py-2 font-mono bg-white border border-[#E4E0D6] rounded-xl text-xs text-[#24332F] placeholder-[#8A9690] focus:outline-none focus:ring-1 focus:ring-[#176B63] focus:border-[#176B63]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">Description</label>
+            <label className="block text-xs font-semibold text-[#24332F] mb-1.5 uppercase tracking-wider">
+              Description / Course Module
+            </label>
             <textarea
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief summary of test syllabus and topics..."
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              placeholder="Brief summary of classical syllabus, shlokas, and clinical reasoning covered..."
+              className="w-full px-3 py-2 bg-white border border-[#E4E0D6] rounded-xl text-xs text-[#24332F] placeholder-[#8A9690] focus:outline-none focus:ring-1 focus:ring-[#176B63] focus:border-[#176B63]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">Candidate Instructions</label>
+            <label className="block text-xs font-semibold text-[#24332F] mb-1.5 uppercase tracking-wider">
+              Candidate Instructions
+            </label>
             <textarea
               rows={3}
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
-              placeholder="1. You have 45 minutes to finish.\n2. Do not switch tabs.\n3. Keep your webcam clear."
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              placeholder="1. Read each classical question carefully.\n2. Negative marking is applied on incorrect selections.\n3. Complete submission before the countdown elapses."
+              className="w-full px-3 py-2 bg-white border border-[#E4E0D6] rounded-xl text-xs text-[#24332F] placeholder-[#8A9690] focus:outline-none focus:ring-1 focus:ring-[#176B63] focus:border-[#176B63]"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">Duration (Minutes)</label>
+              <label className="block text-xs font-semibold text-[#24332F] mb-1.5 uppercase tracking-wider">
+                Duration (Minutes)
+              </label>
               <input
                 type="number"
                 min={5}
                 max={300}
                 value={durationMinutes}
                 onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 30)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full px-3 py-2 bg-white border border-[#E4E0D6] rounded-xl text-xs text-[#24332F] focus:outline-none focus:ring-1 focus:ring-[#176B63] focus:border-[#176B63]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">Passing Score (%)</label>
+              <label className="block text-xs font-semibold text-[#24332F] mb-1.5 uppercase tracking-wider">
+                Passing Score (%)
+              </label>
               <input
                 type="number"
                 min={1}
                 max={100}
                 value={passingScore}
                 onChange={(e) => setPassingScore(parseFloat(e.target.value) || 50)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full px-3 py-2 bg-white border border-[#E4E0D6] rounded-xl text-xs text-[#24332F] focus:outline-none focus:ring-1 focus:ring-[#176B63] focus:border-[#176B63]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">Publication Status</label>
+              <label className="block text-xs font-semibold text-[#24332F] mb-1.5 uppercase tracking-wider">
+                Publication Status
+              </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as any)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full px-3 py-2 bg-white border border-[#E4E0D6] rounded-xl text-xs text-[#24332F] focus:outline-none focus:ring-1 focus:ring-[#176B63] focus:border-[#176B63]"
               >
-                <option value="DRAFT">DRAFT (Hidden from students)</option>
+                <option value="DRAFT">DRAFT (Hidden from candidates)</option>
                 <option value="PUBLISHED">PUBLISHED (Available)</option>
                 <option value="CLOSED">CLOSED (Assessment Finished)</option>
                 <option value="ARCHIVED">ARCHIVED (Locked)</option>
@@ -636,8 +649,8 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
           </div>
 
           {/* Anti-Cheating & Scoring Toggles */}
-          <div className="pt-4 border-t border-slate-800 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+          <div className="pt-4 border-t border-[#E4E0D6] space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#66736E]">
               Proctoring & Assessment Rules
             </h3>
 
@@ -647,11 +660,11 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
                   type="checkbox"
                   checked={proctoringStrict}
                   onChange={(e) => setProctoringStrict(e.target.checked)}
-                  className="w-4 h-4 rounded text-indigo-600 bg-slate-950 border-slate-800 focus:ring-indigo-500"
+                  className="w-4 h-4 rounded text-[#176B63] bg-white border-[#E4E0D6] focus:ring-[#176B63]"
                 />
                 <div>
-                  <span className="text-xs font-medium text-white block">Strict Proctoring</span>
-                  <span className="text-[11px] text-slate-400">Warn candidate and record incidents when tabs are switched or fullscreen is exited</span>
+                  <span className="text-xs font-semibold text-[#24332F] block">Strict Examination Integrity</span>
+                  <span className="text-[11px] text-[#66736E]">Warn candidate and log incidents when tabs are switched or window loses focus</span>
                 </div>
               </label>
 
@@ -660,26 +673,26 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
                   type="checkbox"
                   checked={negativeMarking}
                   onChange={(e) => setNegativeMarking(e.target.checked)}
-                  className="w-4 h-4 rounded text-indigo-600 bg-slate-950 border-slate-800 focus:ring-indigo-500"
+                  className="w-4 h-4 rounded text-[#176B63] bg-white border-[#E4E0D6] focus:ring-[#176B63]"
                 />
                 <div>
-                  <span className="text-xs font-medium text-white block">Negative Marking</span>
-                  <span className="text-[11px] text-slate-400">Deduct marks for incorrect answers</span>
+                  <span className="text-xs font-semibold text-[#24332F] block">Negative Marking</span>
+                  <span className="text-[11px] text-[#66736E]">Deduct marks for incorrect answers</span>
                 </div>
               </label>
 
               {negativeMarking && (
                 <div className="ml-7 flex items-center gap-2">
-                  <span className="text-xs text-slate-400">Deduction per incorrect answer:</span>
+                  <span className="text-xs text-[#66736E]">Deduction per incorrect answer:</span>
                   <input
                     type="number"
                     step={0.25}
                     min={0}
                     value={negativeMarkPerQuestion}
                     onChange={(e) => setNegativeMarkPerQuestion(parseFloat(e.target.value) || 0.5)}
-                    className="w-20 px-2 py-1 bg-slate-950 border border-slate-800 rounded-lg text-xs text-rose-300 font-mono"
+                    className="w-20 px-2 py-1 bg-white border border-[#E4E0D6] rounded-lg text-xs text-rose-700 font-mono font-bold"
                   />
-                  <span className="text-xs text-slate-400">points</span>
+                  <span className="text-xs text-[#66736E]">points</span>
                 </div>
               )}
 
@@ -688,11 +701,11 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
                   type="checkbox"
                   checked={shuffleQuestions}
                   onChange={(e) => setShuffleQuestions(e.target.checked)}
-                  className="w-4 h-4 rounded text-indigo-600 bg-slate-950 border-slate-800 focus:ring-indigo-500"
+                  className="w-4 h-4 rounded text-[#176B63] bg-white border-[#E4E0D6] focus:ring-[#176B63]"
                 />
                 <div>
-                  <span className="text-xs font-medium text-white block">Randomize Question Order</span>
-                  <span className="text-[11px] text-slate-400">Shuffle question order for each student attempt to prevent copying</span>
+                  <span className="text-xs font-semibold text-[#24332F] block">Randomize Question Order</span>
+                  <span className="text-[11px] text-[#66736E]">Shuffle question sequence for each candidate attempt</span>
                 </div>
               </label>
 
@@ -701,11 +714,11 @@ export function ExamBuilderForm({ initialData }: { initialData?: Partial<ExamDat
                   type="checkbox"
                   checked={shuffleOptions}
                   onChange={(e) => setShuffleOptions(e.target.checked)}
-                  className="w-4 h-4 rounded text-indigo-600 bg-slate-950 border-slate-800 focus:ring-indigo-500"
+                  className="w-4 h-4 rounded text-[#176B63] bg-white border-[#E4E0D6] focus:ring-[#176B63]"
                 />
                 <div>
-                  <span className="text-xs font-medium text-white block">Randomize Option Choices</span>
-                  <span className="text-[11px] text-slate-400">Shuffle multiple choice option alternatives</span>
+                  <span className="text-xs font-semibold text-[#24332F] block">Randomize Option Choices</span>
+                  <span className="text-[11px] text-[#66736E]">Shuffle multiple choice alternatives per question</span>
                 </div>
               </label>
             </div>
