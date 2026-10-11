@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎓 ExamPortal — Full-Stack Proctored Examination & Assessment System
 
-## Getting Started
+A modern, full-stack examination and testing portal built with **Next.js (App Router, TypeScript, Tailwind CSS, Prisma ORM, and PostgreSQL)**.
 
-First, run the development server:
+---
+
+## 🌟 Key Features
+
+- **Authentication & RBAC**: Edge-ready JWT session management with HTTP-only cookies and role-based access control (`ADMIN` and `STUDENT`).
+- **Admin Dashboard**: Comprehensive platform metrics (total exams, active candidates, test submissions, overall pass rates), active test monitors, and recent submission logs.
+- **Student Management**: Candidate CRUD operations, real-time search/filtering by name, department, or student roll ID, and bulk CSV/batch imports.
+- **Interactive Exam Builder**: Create single/multi-choice MCQs, True/False, and short-answer questions with custom points, negative marking deductions, explanation notes, and question reordering.
+- **Scheduling & Batch Assignment**: Assign exams to individual students or entire departments, set time windows (`validFrom`, `validTo`), and control attempt limits.
+- **Proctored Student Exam Room**: Distraction-free testing UI, live countdown timer with auto-submit, real-time tab switch & window blur detection, background answer auto-saving, and an interactive question palette.
+- **Automated Scoring Engine**: Instant evaluation supporting positive and negative marking, zero-floor protection, and instant pass/fail determination.
+- **Attempt Review & Analytics**: Comprehensive question-by-question breakdown displaying candidate selections, correct answers, and instructor solution notes.
+- **Verifiable Digital Certificates**: Printable, high-resolution certificates with unique serial numbers (`CERT-2026-XXXXX`), instructor signatures, and a public verification link (`/verify/[code]`).
+- **Docker Ready**: Production multi-stage `Dockerfile` and `docker-compose.yml` with a PostgreSQL 16 container.
+
+---
+
+## 🚀 Getting Started
+
+### 1. Configure Database Connection
+
+Create or update your `.env` file with your PostgreSQL connection URL (e.g. from Supabase, Neon, Railway, Render, or a local instance):
+
+```env
+DATABASE_URL="postgresql://username:password@host:5432/exam_portal?schema=public"
+JWT_SECRET="exam-portal-secret-token-key-change-in-production-2026"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
+
+### 2. Push Schema to Database & Seed Sample Data
+
+```bash
+# Push Prisma schema to your database
+npm run db:push
+
+# Populate sample Admin, Students, Exams, Questions, Assignments, and Certificates
+npm run db:seed
+```
+
+### 3. Run the Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🔑 Pre-Seeded Demo Accounts
 
-## Learn More
+| Role | Email | Password | Permissions |
+| :--- | :--- | :--- | :--- |
+| **Admin** | `admin@examportal.com` | `admin123` | Exam Builder, Candidate Enrollment, Analytics, Grading |
+| **Student 1** | `john.doe@student.com` | `student123` | Proctored Exam Room, Attempt History, Certificates |
+| **Student 2** | `jane.smith@student.com` | `student123` | Assigned Exams, Candidate Portal |
+| **Student 3** | `alex.jones@student.com` | `student123` | Candidate Portal |
 
-To learn more about Next.js, take a look at the following resources:
+*(Quick demo login buttons are also available directly on the login page!)*
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🧪 Running Automated Tests
 
-## Deploy on Vercel
+Run the automated unit and integration test suite:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm test
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This verifies password hashing, JWT authentication tokens, the evaluation scoring engine, negative marking formulas, and utility formatting.
+
+---
+
+## 🐳 Docker Deployment
+
+To launch the full system (Application + PostgreSQL database) with a single command:
+
+```bash
+docker-compose up --build -d
+```
+
+The portal will be accessible at [http://localhost:3000](http://localhost:3000).

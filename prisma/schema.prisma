@@ -1,0 +1,298 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+
+enum Role {
+  ADMIN
+  STUDENT
+}
+
+enum ExamStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  CLOSED
+}
+
+enum QuestionType {
+  MCQ_SINGLE
+  MCQ_MULTIPLE
+  TRUE_FALSE
+  SHORT_ANSWER
+}
+
+enum AssignmentStatus {
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  TIMED_OUT
+  ABANDONED
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  password    String
+  role        Role     @default(STUDENT)
+  studentId   String?  @unique // Optional student registration/roll number
+  department  String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdExams    Exam[]           @relation("ExamAuthor")
+  assignments     ExamAssignment[]
+  attempts        ExamAttempt[]
+  certificates    Certificate[]
+  attemptRequests AttemptRequest[]
+
+  @@index([role, isActive])
+  @@map("users")
+}
+
+model Exam {
+  id                      String      @id @default(cuid())
+  version                 Int         @default(1) // Version number increments when edited with attempts
+  title                   String
+  description             String?
+  code                    String      @unique // Unique code e.g. CS101-M1
+  instructions            String?
+  durationMinutes         Int         @default(60)
+  passingScore            Float       @default(50.0) // Percentage required to pass
+  totalMarks              Float       @default(0.0)
+  shuffleQuestions        Boolean     @default(false)
+  shuffleOptions          Boolean     @default(false)
+  showResultsImmediately Boolean     @default(true)
+  allowReview             Boolean     @default(true)
+  negativeMarking         Boolean     @default(false)
+  negativeMarkPerQuestion Float       @default(0.0)
+  proctoringStrict        Boolean     @default(true) // Detect tab switches & fullscreen exit
+  status                  ExamStatus  @default(DRAFT)
+  authorId                String
+  author                  User        @relation("ExamAuthor", fields: [authorId], references: [id])
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
+
+  questions       Question[]
+  assignments     ExamAssignment[]
+  attempts        ExamAttempt[]
+  certificates    Certificate[]
+  attemptRequests AttemptRequest[]
+
+  @@index([status])
+  @@index([authorId])
+  @@map("exams")
+}
+
+model Question {
+  id             String       @id @default(cuid())
+  examId         String
+  exam           Exam         @relation(fields: [examId], references: [id], onDelete: Cascade)
+  version        Int          @default(1)
+  isActive       Boolean      @default(true) // False when archived by a newer exam version
+  order          Int          @default(0)
+  type           QuestionType @default(MCQ_SINGLE)
+  prompt         String
+  points         Float        @default(1.0)
+  negativePoints Float        @default(0.0)
+  explanation    String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  options QuestionOption[]
+  answers StudentAnswer[]
+
+  @@index([examId, isActive])
+  @@map("questions")
+}
+
+model QuestionOption {
+  id         String   @id @default(cuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  text       String
+  isCorrect  Boolean  @default(false)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([questionId])
+  @@map("question_options")
+}
+
+model ExamAssignment {
+  id          String           @id @default(cuid())
+  examId      String
+  exam        Exam             @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId   String
+  student     User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status      AssignmentStatus @default(ASSIGNED)
+  validFrom   DateTime?
+  validTo     DateTime?
+  maxAttempts Int              @default(1)
+  assignedAt  DateTime         @default(now())
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  attempts        ExamAttempt[]
+  attemptRequests AttemptRequest[]
+
+  @@unique([examId, studentId])
+  @@index([studentId, status])
+  @@index([examId])
+  @@map("exam_assignments")
+}
+
+model ExamAttempt {
+  id                  String         @id @default(cuid())
+  examId              String
+  exam                Exam           @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId           String
+  student             User           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  assignmentId        String?
+  assignment          ExamAssignment? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  examVersion         Int            @default(1)
+  questionsSnapshot   Json?          // Immutable snapshot of questions taken
+  startedAt           DateTime       @default(now())
+  submittedAt         DateTime?
+  status              AttemptStatus  @default(IN_PROGRESS)
+  score               Float          @default(0.0)
+  totalMarks          Float          @default(0.0)
+  percentage          Float          @default(0.0)
+  passed              Boolean        @default(false)
+  requiresReview      Boolean        @default(false) // True if subjective questions need instructor review
+  reviewStatus        String         @default("COMPLETED") // "PENDING_REVIEW" or "COMPLETED"
+  reviewedBy          String?
+  reviewedAt          DateTime?
+  timeSpentSeconds    Int            @default(0)
+  tabSwitchCount      Int            @default(0)
+  fullscreenExitCount Int            @default(0)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  answers     StudentAnswer[]
+  certificate Certificate?
+
+  @@index([studentId, examId, status])
+  @@index([examId])
+  @@index([createdAt])
+  @@map("exam_attempts")
+}
+
+model StudentAnswer {
+  id                String      @id @default(cuid())
+  attemptId         String
+  attempt           ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId        String
+  question          Question    @relation(fields: [questionId], references: [id], onDelete: Restrict) // PREVENT CASCADE DELETE of historical student answers!
+  selectedOptionIds String[]    @default([])
+  textAnswer        String?
+  isCorrect         Boolean?
+  marksAwarded      Float       @default(0.0)
+  requiresReview    Boolean     @default(false)
+  reviewedBy        String?
+  reviewedAt        DateTime?
+  feedback          String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@index([questionId])
+  @@map("student_answers")
+}
+
+model Certificate {
+  id                String      @id @default(cuid())
+  certificateNumber String      @unique
+  attemptId         String      @unique
+  attempt           ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  examId            String
+  exam              Exam        @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId         String
+  student           User        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  issueDate         DateTime    @default(now())
+  score             Float
+  percentage        Float
+  verificationCode  String      @unique
+  createdAt         DateTime    @default(now())
+
+  @@index([studentId])
+  @@index([examId])
+  @@index([verificationCode])
+  @@map("certificates")
+}
+
+model AttemptRequest {
+  id           String         @id @default(cuid())
+  studentId    String
+  student      User           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  examId       String
+  exam         Exam           @relation(fields: [examId], references: [id], onDelete: Cascade)
+  assignmentId String?
+  assignment   ExamAssignment? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  reason       String
+  status       RequestStatus  @default(PENDING)
+  adminComment String?
+  reviewedBy   String?
+  reviewedAt   DateTime?
+  requestedAt  DateTime       @default(now())
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([studentId, examId, status])
+  @@index([status])
+  @@map("attempt_requests")
+}
+
+model CertificateTemplate {
+  id               String   @id @default(cuid())
+  organizationName String   @default("National Examination Board")
+  title            String   @default("Certificate of Achievement")
+  passStatement    String   @default("has successfully fulfilled the prescribed evaluation criteria and demonstrated academic proficiency in the examination:")
+  signatoryName    String   @default("Academic Director")
+  signatoryTitle   String   @default("Board of Certification")
+  logoUrl          String?
+  primaryColor     String   @default("#d97706") // Default amber theme
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("certificate_templates")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  targetType String?
+  targetId   String?
+  details    String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([action])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
