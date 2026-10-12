@@ -25,7 +25,7 @@ export async function middleware(request: NextRequest) {
   // 1. Auth routes (/login, /register)
   if (pathname.startsWith("/login") || pathname.startsWith("/register")) {
     if (session) {
-      if (session.role === "ADMIN") {
+      if (session.role === "ADMIN" || session.role === "SUPER_ADMIN") {
         return NextResponse.redirect(new URL("/admin", request.url));
       }
       return NextResponse.redirect(new URL("/student/dashboard", request.url));
@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest) {
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
     }
-    if (session.role !== "ADMIN") {
+    if (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN") {
       return NextResponse.redirect(new URL("/student/dashboard", request.url));
     }
     return NextResponse.next();

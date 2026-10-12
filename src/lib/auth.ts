@@ -14,6 +14,23 @@ export interface TokenPayload {
   name: string;
   role: Role;
   studentId?: string | null;
+  tokenVersion?: number;
+}
+
+export function isSuperAdmin(role: string | Role | undefined | null): boolean {
+  return role === Role.SUPER_ADMIN;
+}
+
+export function isAdmin(role: string | Role | undefined | null): boolean {
+  return role === Role.ADMIN || role === Role.SUPER_ADMIN;
+}
+
+export function requireAdmin(session: TokenPayload | null | undefined): boolean {
+  return !!session && isAdmin(session.role);
+}
+
+export function requireSuperAdmin(session: TokenPayload | null | undefined): boolean {
+  return !!session && isSuperAdmin(session.role);
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -56,7 +73,8 @@ export async function getSessionUser(): Promise<TokenPayload | null> {
 
 /**
  * Authoritatively retrieves user profile directly from the database
- * to enforce immediate lockout if an administrator deactivates the account.
+ * to enforce immediate lockout if an administrator deactivates the account
+ * or if tokenVersion has changed (e.g. password changed or reset).
  */
 export async function getActiveUserFromSession() {
   const session = await getSessionUser();
@@ -73,10 +91,19 @@ export async function getActiveUserFromSession() {
       studentId: true,
       department: true,
       isActive: true,
+      tokenVersion: true,
     },
   });
+
+  if (!user || !user.isActive) return null;
+
+  // Immediate session invalidation if tokenVersion is present and doesn't match
+  if (session.tokenVersion !== undefined && user.tokenVersion !== session.tokenVersion) {
+    return null;
+  }
 
   return user;
 }
 
 export const AUTH_COOKIE_NAME = "auth_token";
+

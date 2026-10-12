@@ -68,7 +68,7 @@ export async function POST(
     });
 
     // If admin is previewing or student is assigned
-    if (!assignment && user.role !== "ADMIN") {
+    if (!assignment && user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
       return NextResponse.json({ error: "You are not enrolled in this examination" }, { status: 403 });
     }
 

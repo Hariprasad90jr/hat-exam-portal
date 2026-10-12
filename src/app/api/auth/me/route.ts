@@ -18,12 +18,17 @@ export async function GET() {
       studentId: true,
       department: true,
       isActive: true,
+      tokenVersion: true,
       createdAt: true,
     },
   });
 
   if (!user || !user.isActive) {
     return NextResponse.json({ user: null, error: "Account deactivated" }, { status: 403 });
+  }
+
+  if (session.tokenVersion !== undefined && user.tokenVersion !== session.tokenVersion) {
+    return NextResponse.json({ user: null, error: "Session expired" }, { status: 401 });
   }
 
   return NextResponse.json({ user });

@@ -55,7 +55,7 @@ export async function GET(
     }
 
     // Security check: Only the candidate or an Admin can review the attempt
-    if (user.role !== "ADMIN" && attempt.studentId !== user.id) {
+    if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN" && attempt.studentId !== user.id) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 

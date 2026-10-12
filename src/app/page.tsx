@@ -24,7 +24,7 @@ export default async function HomePage() {
                   Welcome, <strong className="text-[#24332F]">{session.name}</strong>
                 </span>
                 <Link
-                  href={session.role === "ADMIN" ? "/admin" : "/student/dashboard"}
+                  href={(session.role === "ADMIN" || session.role === "SUPER_ADMIN") ? "/admin" : "/student/dashboard"}
                   className="px-4 py-2 bg-[#176B63] hover:bg-[#12554E] text-white text-sm font-medium rounded-lg transition shadow-sm"
                 >
                   Enter Portal

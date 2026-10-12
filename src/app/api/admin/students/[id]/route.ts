@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, isAdmin } from "@/lib/auth";
 import { logAuditEvent } from "@/lib/audit";
 
 export async function PATCH(
@@ -8,7 +8,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSessionUser();
-  if (!session || session.role !== "ADMIN") {
+  if (!session || !isAdmin(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -37,7 +37,10 @@ export async function PATCH(
     const updated = await prisma.user.update({
       where: { id },
       data: {
-        ...(typeof isActive === "boolean" ? { isActive } : {}),
+        ...(typeof isActive === "boolean" ? {
+          isActive,
+          ...(isActive === false ? { tokenVersion: { increment: 1 } } : {})
+        } : {}),
         ...(name ? { name: name.trim() } : {}),
         ...(department !== undefined ? { department: department ? department.trim() : null } : {}),
         ...(studentId !== undefined ? { studentId: studentId ? studentId.trim() : null } : {}),
@@ -76,7 +79,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSessionUser();
-  if (!session || session.role !== "ADMIN") {
+  if (!session || !isAdmin(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

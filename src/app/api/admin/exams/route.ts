@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, isAdmin } from "@/lib/auth";
 import { ExamStatus } from "@prisma/client";
 import { logAuditEvent } from "@/lib/audit";
 
 export async function GET() {
   const session = await getSessionUser();
-  if (!session || session.role !== "ADMIN") {
+  if (!session || !isAdmin(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -33,7 +33,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const session = await getSessionUser();
-  if (!session || session.role !== "ADMIN") {
+  if (!session || !isAdmin(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

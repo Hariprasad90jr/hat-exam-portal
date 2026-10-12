@@ -1,0 +1,44 @@
+{
+  "certificatePlanVersion": "1.0",
+  "brand": "YadaSutra – TATHA PARAMPARAYA",
+  "issuanceRule": {
+    "trigger": "AUTO_ISSUE_ON_PASS",
+    "condition": "finalScorePercentage >= exam.passPercentage AND attempt.status is finalized",
+    "oneCertificatePerExamPerStudent": true,
+    "certificateNumber": "Unique generated number",
+    "verificationCode": "Unique public verification code",
+    "publicVerification": true
+  },
+  "template": {
+    "title": "Certificate of Achievement",
+    "subtitle": "Ayurveda Panchakarma Assessment",
+    "body": "This is to certify that {{studentName}} has successfully passed the assessment {{examTitle}}.",
+    "details": [
+      "{{examTitle}}",
+      "Score: {{scorePercentage}}%",
+      "Date: {{issuedDate}}",
+      "Certificate No: {{certificateNumber}}"
+    ],
+    "verificationLine": "Verify this certificate at {{verificationUrl}}",
+    "design": {
+      "background": "Warm ivory",
+      "primaryColor": "#176B63",
+      "accentColor": "#B59A68",
+      "typography": "Premium modern sans-serif with restrained heritage serif for the certificate title",
+      "logo": "Use the approved YadaSutra logo without distortion"
+    }
+  },
+  "adminControls": [
+    "Enable/disable automatic certificate issuance per exam",
+    "Set or edit certificate template",
+    "View issued certificates",
+    "Revoke certificate if required",
+    "Open public verification page"
+  ],
+  "studentExperience": [
+    "Show certificate status after a passed attempt",
+    "Allow certificate viewing/printing",
+    "Show certificate number and verification code",
+    "Keep certificate linked to the exact passed exam/attempt"
+  ]
+}

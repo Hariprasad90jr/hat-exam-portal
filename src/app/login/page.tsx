@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Lock, Mail, ArrowRight, ShieldCheck, UserCheck, AlertCircle, Loader2 } from "lucide-react";
+import { Lock, Mail, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
 import { BrandLogo, BrandWatermark } from "@/components/BrandLogo";
 
 function LoginForm() {
@@ -48,12 +48,6 @@ function LoginForm() {
     }
   };
 
-  const handleQuickLogin = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setError(null);
-  };
-
   return (
     <div className="bg-white border border-[#E4E0D6] rounded-2xl p-8 sm:p-10 shadow-lg shadow-[#176B63]/5">
       <div className="mb-6">
@@ -89,9 +83,17 @@ function LoginForm() {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#24332F] mb-1.5 uppercase tracking-wider">
-            Password
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-xs font-semibold text-[#24332F] uppercase tracking-wider">
+              Password
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-xs text-[#176B63] hover:text-[#12554E] font-medium transition"
+            >
+              Forgot Password?
+            </Link>
+          </div>
           <div className="relative">
             <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8A9690]" />
             <input
@@ -124,33 +126,8 @@ function LoginForm() {
         </button>
       </form>
 
-      {/* Quick Access Helper */}
-      <div className="mt-8 pt-6 border-t border-[#E4E0D6]">
-        <p className="text-[11px] uppercase tracking-widest text-[#8A9690] font-semibold mb-3 text-center">
-          Fast-Fill Credentials
-        </p>
-        <div className="grid grid-cols-2 gap-2.5">
-          <button
-            type="button"
-            onClick={() => handleQuickLogin("admin@examportal.com", "admin123")}
-            className="py-2.5 px-3 bg-[#FAF7F0] hover:bg-[#F6F1E5] border border-[#E4E0D6] rounded-lg text-xs font-medium text-[#24332F] transition flex items-center justify-center gap-1.5 cursor-pointer"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-[#B59A68]" />
-            <span>Admin Demo</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleQuickLogin("john.doe@student.com", "student123")}
-            className="py-2.5 px-3 bg-[#F0F7F6] hover:bg-[#E8F3F1] border border-[#2E857A]/20 rounded-lg text-xs font-medium text-[#176B63] transition flex items-center justify-center gap-1.5 cursor-pointer"
-          >
-            <UserCheck className="w-3.5 h-3.5 text-[#176B63]" />
-            <span>Student Demo</span>
-          </button>
-        </div>
-      </div>
-
       {/* Registration link */}
-      <div className="mt-6 text-center">
+      <div className="mt-8 pt-6 border-t border-[#E4E0D6] text-center">
         <p className="text-xs text-[#66736E]">
           Seeking institutional enrollment?{" "}
           <Link href="/register" className="text-[#176B63] hover:text-[#12554E] font-semibold underline underline-offset-4">

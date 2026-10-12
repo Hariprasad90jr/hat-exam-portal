@@ -97,6 +97,7 @@ export async function POST(req: Request) {
       name: user.name,
       role: user.role,
       studentId: user.studentId,
+      tokenVersion: user.tokenVersion,
     });
 
     const response = NextResponse.json({
@@ -108,7 +109,7 @@ export async function POST(req: Request) {
         role: user.role,
         studentId: user.studentId,
       },
-      redirectTo: user.role === "ADMIN" ? "/admin" : "/student/dashboard",
+      redirectTo: (user.role === "ADMIN" || user.role === "SUPER_ADMIN") ? "/admin" : "/student/dashboard",
     });
 
     response.cookies.set({

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionUser, hashPassword } from "@/lib/auth";
+import { getSessionUser, hashPassword, isAdmin } from "@/lib/auth";
 import { Role } from "@prisma/client";
 import { logAuditEvent } from "@/lib/audit";
 
@@ -14,7 +14,7 @@ interface BulkStudentRow {
 
 export async function POST(req: Request) {
   const session = await getSessionUser();
-  if (!session || session.role !== "ADMIN") {
+  if (!session || !isAdmin(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

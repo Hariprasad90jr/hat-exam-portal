@@ -29,6 +29,28 @@ export function isValidPassword(password: string): { valid: boolean; error?: str
   return { valid: true };
 }
 
+export function validateStrongPassword(password: string): { valid: boolean; error?: string } {
+  if (!password || typeof password !== "string") {
+    return { valid: false, error: "Password is required" };
+  }
+  if (password.length < 12) {
+    return { valid: false, error: "Password must be at least 12 characters long" };
+  }
+  if (!/[A-Z]/.test(password)) {
+    return { valid: false, error: "Password must contain at least one uppercase letter" };
+  }
+  if (!/[a-z]/.test(password)) {
+    return { valid: false, error: "Password must contain at least one lowercase letter" };
+  }
+  if (!/[0-9]/.test(password)) {
+    return { valid: false, error: "Password must contain at least one digit" };
+  }
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    return { valid: false, error: "Password must contain at least one special character" };
+  }
+  return { valid: true };
+}
+
 export function parsePaginationParams(urlSearchParams: URLSearchParams): {
   page: number;
   limit: number;

@@ -11,11 +11,13 @@ import {
   LogOut, 
   Award,
   Clock,
-  Activity
+  Activity,
+  ShieldCheck,
+  KeyRound
 } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 
-const navItems = [
+const baseNavItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "All Exams", href: "/admin/exams", icon: BookOpen },
   { label: "Create Exam", href: "/admin/exams/create", icon: PlusCircle },
@@ -26,9 +28,17 @@ const navItems = [
   { label: "Audit Activity Log", href: "/admin/audit-logs", icon: Activity },
 ];
 
-export function AdminSidebar({ adminName }: { adminName?: string }) {
+export function AdminSidebar({
+  adminName,
+  adminRole,
+}: {
+  adminName?: string;
+  adminRole?: string;
+}) {
   const pathname = usePathname();
   const router = useRouter();
+
+  const isSuper = adminRole === "SUPER_ADMIN";
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -51,11 +61,11 @@ export function AdminSidebar({ adminName }: { adminName?: string }) {
       </div>
 
       {/* Nav list */}
-      <nav className="flex-1 p-3.5 space-y-1">
+      <nav className="flex-1 p-3.5 space-y-1 overflow-y-auto">
         <div className="px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-[#B59A68]">
           Curriculum & Operations
         </div>
-        {navItems.map((item) => {
+        {baseNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
           return (
@@ -73,6 +83,36 @@ export function AdminSidebar({ adminName }: { adminName?: string }) {
             </Link>
           );
         })}
+
+        <div className="pt-4 px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-[#B59A68]">
+          Administration & Security
+        </div>
+
+        {isSuper && (
+          <Link
+            href="/admin/administrators"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition relative ${
+              pathname.startsWith("/admin/administrators")
+                ? "bg-[#176B63] text-white shadow-sm font-semibold before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:bg-[#B59A68] before:rounded-r"
+                : "text-[#A3B8B2] hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <ShieldCheck className={`w-4 h-4 shrink-0 ${pathname.startsWith("/admin/administrators") ? "text-[#B59A68]" : "text-[#7A938C]"}`} />
+            <span>Administrators</span>
+          </Link>
+        )}
+
+        <Link
+          href="/admin/security"
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition relative ${
+            pathname.startsWith("/admin/security")
+              ? "bg-[#176B63] text-white shadow-sm font-semibold before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:bg-[#B59A68] before:rounded-r"
+              : "text-[#A3B8B2] hover:text-white hover:bg-white/5"
+          }`}
+        >
+          <KeyRound className={`w-4 h-4 shrink-0 ${pathname.startsWith("/admin/security") ? "text-[#B59A68]" : "text-[#7A938C]"}`} />
+          <span>Security & Password</span>
+        </Link>
       </nav>
 
       {/* User profile & logout */}
@@ -84,7 +124,9 @@ export function AdminSidebar({ adminName }: { adminName?: string }) {
             </div>
             <div className="min-w-0">
               <p className="text-xs font-semibold text-white truncate">{adminName || "Administrator"}</p>
-              <p className="text-[10px] text-[#B59A68] tracking-wider uppercase font-medium">Super Admin</p>
+              <p className="text-[10px] text-[#B59A68] tracking-wider uppercase font-semibold">
+                {isSuper ? "Super Admin" : "Administrator"}
+              </p>
             </div>
           </div>
           <button
